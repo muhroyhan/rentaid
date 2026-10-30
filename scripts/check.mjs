@@ -36,7 +36,17 @@ for (const path of ["apps", "packages", "infra", "tests"]) {
 const commands = [
   ["pnpm", ["contracts:check"]],
   ["pnpm", ["--filter", "@rentaid/api-client", "typecheck"]],
-  ["pnpm", ["exec", "eslint", "scripts"]],
+  ["pnpm", ["--filter", "@rentaid/admin", "typecheck"]],
+  [
+    "pnpm",
+    [
+      "exec",
+      "eslint",
+      "scripts",
+      "apps/admin/src",
+      "apps/admin/vite.config.ts",
+    ],
+  ],
   [
     "pnpm",
     [
@@ -51,6 +61,8 @@ const commands = [
       "packages/api-client/*.json",
       "packages/api-client/src/index.ts",
       "infra/*.yaml",
+      "apps/admin/*.{json,html,ts}",
+      "apps/admin/src/*.{ts,tsx,css}",
     ],
   ],
   ["go", ["-C", "apps/api", "vet", "./..."]],
@@ -69,7 +81,7 @@ const commands = [
       "./...",
     ],
   ],
-  ["go", ["-C", "apps/api", "test", "./..."]],
+  ["pnpm", ["test"]],
 ];
 const formatted = spawnSync("gofmt", ["-l", "apps/api"], { encoding: "utf8" });
 if (formatted.status !== 0 || formatted.stdout.trim()) {
