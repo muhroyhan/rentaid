@@ -128,7 +128,7 @@
 
 Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan singkat di samping phase jika ada.
 
-- [ ] 01 Workspace ke backend yang dapat dijalankan
+- [x] 01 Workspace ke backend yang dapat dijalankan — migrasi/seed PostgreSQL, readiness saat database mati, persistensi volume, guard merek, kontrak, build, dan `pnpm check` lulus; golangci-lint dijalankan via Docker karena Application Control Windows.
 - [ ] 02 Akun admin ke sesi yang terlindungi
 - [ ] 03 Konten CMS ke konten publik
 - [ ] 04 Pengguna ke persetujuan toko
@@ -159,4 +159,12 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 
 ## Perintah
 
-Belum ada. Isi bagian ini di akhir Phase 01 (jalankan layanan, migrasi, seed, `pnpm check`, test, build web/admin/api, build Android) dan pertahankan agar selalu sesuai kenyataan.
+- `pnpm install --frozen-lockfile`: instal dependensi workspace.
+- `pnpm db:up` / `pnpm db:down`: mulai/hentikan PostgreSQL lokal tanpa menghapus volume.
+- Tetapkan `APP_ENV` dan `DATABASE_URL` seperti `.env.example` sebelum menjalankan API, migrasi, atau seed; lihat `README.md`.
+- `pnpm db:migrate` / `pnpm db:seed`: jalankan migrasi / seed lokal idempoten.
+- `pnpm api:dev` / `pnpm api:build`: jalankan API / build executable ke `.artifacts/`.
+- `pnpm contracts:generate` / `pnpm contracts:check`: generate / periksa sinkronisasi OpenAPI dan klien TypeScript.
+- `pnpm check`: pemeriksaan merek, kontrak, TypeScript, ESLint, Prettier, gofmt, go vet, golangci-lint via Docker, dan test Go.
+- `pnpm test`: test Go; tetapkan `TEST_DATABASE_URL` untuk menjalankan test integrasi PostgreSQL.
+- Build web, admin, dan Android belum tersedia; tambahkan perintah saat phase terkait selesai.

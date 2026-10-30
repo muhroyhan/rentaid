@@ -1,0 +1,19 @@
+name: rentaid
+services:
+  postgres:
+    image: postgres:18.1
+    environment:
+      POSTGRES_DB: rentaid
+      POSTGRES_USER: rentaid
+      POSTGRES_PASSWORD: rentaid_local
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rentaid -d rentaid"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  postgres_data:
