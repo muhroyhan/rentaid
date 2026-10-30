@@ -129,7 +129,7 @@
 Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan singkat di samping phase jika ada.
 
 - [x] 01 Workspace ke backend yang dapat dijalankan — migrasi/seed PostgreSQL, readiness saat database mati, persistensi volume, guard merek, kontrak, build, dan `pnpm check` lulus; golangci-lint dijalankan via Docker karena Application Control Windows.
-- [ ] 02 Akun admin ke sesi yang terlindungi
+- [x] 02 Akun admin ke sesi yang terlindungi — integrasi PostgreSQL, role, CSRF/Origin, pembatasan login, expiry/logout, dan browser melalui Vite serta Compose lulus.
 - [ ] 03 Konten CMS ke konten publik
 - [ ] 04 Pengguna ke persetujuan toko
 - [ ] 05 Kategori ke referensi katalog
@@ -162,9 +162,12 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm install --frozen-lockfile`: instal dependensi workspace.
 - `pnpm db:up` / `pnpm db:down`: mulai/hentikan PostgreSQL lokal tanpa menghapus volume.
 - Tetapkan `APP_ENV` dan `DATABASE_URL` seperti `.env.example` sebelum menjalankan API, migrasi, atau seed; lihat `README.md`.
-- `pnpm db:migrate` / `pnpm db:seed`: jalankan migrasi / seed lokal idempoten.
+- `pnpm db:migrate` / `pnpm db:seed`: jalankan migrasi / seed lokal idempoten; seed memerlukan `SEED_ADMIN_EMAIL` dan `SEED_ADMIN_PASSWORD`.
 - `pnpm api:dev` / `pnpm api:build`: jalankan API / build executable ke `.artifacts/`.
 - `pnpm contracts:generate` / `pnpm contracts:check`: generate / periksa sinkronisasi OpenAPI dan klien TypeScript.
 - `pnpm check`: pemeriksaan merek, kontrak, TypeScript, ESLint, Prettier, gofmt, go vet, golangci-lint via Docker, dan test Go.
-- `pnpm test`: test Go; tetapkan `TEST_DATABASE_URL` untuk menjalankan test integrasi PostgreSQL.
-- Build web, admin, dan Android belum tersedia; tambahkan perintah saat phase terkait selesai.
+- `pnpm test`: test Go melalui Docker; tetapkan `TEST_DATABASE_URL` untuk menjalankan test integrasi PostgreSQL.
+- `pnpm admin:dev` / `pnpm admin:build`: jalankan panel admin Vite / build admin.
+- `pnpm app:up` / `pnpm app:down`: jalankan / hentikan API, PostgreSQL, dan proxy admin Compose tanpa menghapus volume.
+- `pnpm test:admin-browser`: uji login dan logout melalui browser; konfigurasi akun test dan Chrome dijelaskan di `README.md`.
+- Build marketplace web dan Android belum tersedia; tambahkan perintah saat phase terkait selesai.
