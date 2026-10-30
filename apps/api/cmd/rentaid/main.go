@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"rentaid.local/api/internal/auth"
+	"rentaid.local/api/internal/clock"
 	"rentaid.local/api/internal/database"
 	"rentaid.local/api/internal/httpapi"
 )
@@ -42,13 +44,26 @@ func run(ctx context.Context, args []string, logger *slog.Logger) error {
 		return errors.New("invalid database configuration")
 	}
 	defer pool.Close()
+	days, err := auth.ParsePositive(os.Getenv("SESSION_TTL_DAYS"), 14)
+	if err != nil {
+		return errors.New("invalid session TTL")
+	}
+	limit, err := auth.ParsePositive(os.Getenv("LOGIN_RATE_LIMIT"), 5)
+	if err != nil {
+		return errors.New("invalid login rate limit")
+	}
+	clk := clock.System{}
+	svc := &auth.Service{Pool: pool, Clock: clk, TTL: time.Duration(days) * 24 * time.Hour}
 	switch args[0] {
 	case "migrate":
 		return database.Migrate(ctx, pool)
 	case "seed":
+		if err := svc.SeedAdmin(ctx, os.Getenv("SEED_ADMIN_EMAIL"), os.Getenv("SEED_ADMIN_PASSWORD")); err != nil {
+			return err
+		}
 		return database.Seed(ctx, pool, appEnv)
 	}
-	handler, err := httpapi.New(pool, logger)
+	handler, err := httpapi.NewWithAuth(pool, logger, svc, httpapi.AuthConfig{SecureCookies: !strings.EqualFold(appEnv, "local"), AllowedOrigins: strings.Split(value("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081,http://127.0.0.1:8081"), ","), Limiter: &auth.Limiter{Clock: clk, Max: limit, Window: 15 * time.Minute}})
 	if err != nil {
 		return fmt.Errorf("load API contract: %w", err)
 	}
@@ -94,7 +109,7 @@ func main() {
 }
 
 func safeError(err error) string {
-	if strings.Contains(err.Error(), "usage:") || strings.Contains(err.Error(), "DATABASE_URL") || strings.Contains(err.Error(), "disabled in production") {
+	if strings.Contains(err.Error(), "usage:") || strings.Contains(err.Error(), "DATABASE_URL") || strings.Contains(err.Error(), "disabled in production") || strings.Contains(err.Error(), "seed admin email") || strings.Contains(err.Error(), "seed email belongs") {
 		return err.Error()
 	}
 	return "operation failed; check configuration and service availability"
