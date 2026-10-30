@@ -16,6 +16,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"rentaid.local/api/internal/auth"
+	"rentaid.local/api/internal/content"
 )
 
 //go:embed openapi.json
@@ -41,6 +42,10 @@ func New(db Pinger, logger *slog.Logger) (http.Handler, error) {
 }
 
 func NewWithAuth(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthConfig) (http.Handler, error) {
+	return NewWithContent(db, logger, svc, cfg, nil)
+}
+
+func NewWithContent(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthConfig, pages *content.Service) (http.Handler, error) {
 	doc, err := openapi3.NewLoader().LoadFromData(spec)
 	if err != nil {
 		return nil, err
@@ -67,9 +72,16 @@ func NewWithAuth(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthConf
 	})
 	if svc != nil {
 		registerAuth(mux, svc, cfg)
+		if pages != nil {
+			registerContent(mux, svc, cfg, pages)
+		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+		limit := int64(1 << 20)
+		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/admin/media" {
+			limit = content.MaxBytes + 1
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		started := time.Now()
 		route, params, routeErr := router.FindRoute(r)
 		if routeErr != nil {
@@ -85,6 +97,23 @@ func NewWithAuth(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthConf
 			if _, _, ok := requestSession(w, r, svc, cfg); !ok {
 				return
 			}
+		}
+		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/admin/media" {
+			if r.ContentLength > content.MaxBytes {
+				errorJSON(w, http.StatusRequestEntityTooLarge, "file_too_large", "Ukuran gambar maksimal 5 MB.")
+				return
+			}
+			data, err := io.ReadAll(io.LimitReader(r.Body, content.MaxBytes+1))
+			if err != nil {
+				errorJSON(w, http.StatusBadRequest, "invalid_request", "Permintaan tidak valid.")
+				return
+			}
+			if len(data) > content.MaxBytes {
+				errorJSON(w, http.StatusRequestEntityTooLarge, "file_too_large", "Ukuran gambar maksimal 5 MB.")
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewReader(data))
+			r.ContentLength = int64(len(data))
 		}
 		// Session authentication is already enforced above; handlers enforce roles.
 		requestInput := &openapi3filter.RequestValidationInput{Request: r, PathParams: params, Route: route, Options: &openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}

@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"rentaid.local/api/internal/auth"
 	"rentaid.local/api/internal/clock"
+	"rentaid.local/api/internal/content"
 	"rentaid.local/api/internal/database"
 	"rentaid.local/api/internal/httpapi"
 )
@@ -63,7 +64,8 @@ func run(ctx context.Context, args []string, logger *slog.Logger) error {
 		}
 		return database.Seed(ctx, pool, appEnv)
 	}
-	handler, err := httpapi.NewWithAuth(pool, logger, svc, httpapi.AuthConfig{SecureCookies: !strings.EqualFold(appEnv, "local"), AllowedOrigins: strings.Split(value("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081,http://127.0.0.1:8081"), ","), Limiter: &auth.Limiter{Clock: clk, Max: limit, Window: 15 * time.Minute}})
+	pages := &content.Service{Pool: pool, Clock: clk, Dir: value("MEDIA_DIR", "../../.artifacts/media")}
+	handler, err := httpapi.NewWithContent(pool, logger, svc, httpapi.AuthConfig{SecureCookies: !strings.EqualFold(appEnv, "local"), AllowedOrigins: strings.Split(value("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081,http://127.0.0.1:8081"), ","), Limiter: &auth.Limiter{Clock: clk, Max: limit, Window: 15 * time.Minute}}, pages)
 	if err != nil {
 		return fmt.Errorf("load API contract: %w", err)
 	}
