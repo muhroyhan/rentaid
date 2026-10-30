@@ -1,0 +1,11 @@
+*raggam*
+node_modules/
+.artifacts/
+.env
+!.env.example
+**/build/
+**/dist/
+**/.next/
+**/.gradle/
+**/.dart_tool/
+

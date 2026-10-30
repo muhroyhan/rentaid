@@ -1,0 +1,29 @@
+{
+  "name": "rentaid",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": "24.22.1",
+    "pnpm": "12.14.0"
+  },
+  "scripts": {
+    "db:up": "docker compose -f infra/compose.yaml up -d --wait",
+    "db:down": "docker compose -f infra/compose.yaml down",
+    "api:dev": "go -C apps/api run ./cmd/rentaid serve",
+    "api:build": "node scripts/build-api.mjs",
+    "db:migrate": "go -C apps/api run ./cmd/rentaid migrate",
+    "db:seed": "go -C apps/api run ./cmd/rentaid seed",
+    "contracts:generate": "node scripts/generate.mjs",
+    "contracts:check": "node scripts/contracts-check.mjs",
+    "test": "go -C apps/api test ./...",
+    "check": "node scripts/check.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "16.5.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3"
+  }
+}
