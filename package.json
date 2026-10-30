@@ -22,7 +22,8 @@
     "admin:build": "pnpm --filter @rentaid/admin build",
     "app:up": "docker compose -f infra/compose.yaml --profile app up -d --build --wait",
     "app:down": "docker compose -f infra/compose.yaml --profile app down",
-    "test:admin-browser": "node scripts/test-admin-browser.mjs"
+    "test:admin-browser": "node scripts/test-admin-browser.mjs",
+    "test:admin-content": "node scripts/test-admin-content.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
