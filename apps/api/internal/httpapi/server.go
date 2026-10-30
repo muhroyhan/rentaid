@@ -15,6 +15,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
+	"rentaid.local/api/internal/auth"
 )
 
 //go:embed openapi.json
@@ -28,7 +29,7 @@ type payload struct {
 	Message string `json:"message,omitempty"`
 }
 
-func writeJSON(w http.ResponseWriter, status int, data payload) {
+func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(data)
@@ -36,6 +37,10 @@ func writeJSON(w http.ResponseWriter, status int, data payload) {
 
 // New validates the embedded contract at startup and validates documented request/response pairs.
 func New(db Pinger, logger *slog.Logger) (http.Handler, error) {
+	return NewWithAuth(db, logger, nil, AuthConfig{})
+}
+
+func NewWithAuth(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthConfig) (http.Handler, error) {
 	doc, err := openapi3.NewLoader().LoadFromData(spec)
 	if err != nil {
 		return nil, err
@@ -60,14 +65,29 @@ func New(db Pinger, logger *slog.Logger) (http.Handler, error) {
 		}
 		writeJSON(w, http.StatusOK, payload{Status: "ok"})
 	})
+	if svc != nil {
+		registerAuth(mux, svc, cfg)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 		started := time.Now()
 		route, params, routeErr := router.FindRoute(r)
 		if routeErr != nil {
 			writeJSON(w, http.StatusNotFound, payload{Code: "not_found", Message: "Halaman tidak ditemukan."})
 			return
 		}
-		requestInput := &openapi3filter.RequestValidationInput{Request: r, PathParams: params, Route: route}
+		// Enforce every OpenAPI security requirement before request validation.
+		if route.Operation.Security != nil && len(*route.Operation.Security) > 0 {
+			if svc == nil {
+				errorJSON(w, http.StatusUnauthorized, "unauthorized", "Silakan masuk terlebih dahulu.")
+				return
+			}
+			if _, _, ok := requestSession(w, r, svc, cfg); !ok {
+				return
+			}
+		}
+		// Session authentication is already enforced above; handlers enforce roles.
+		requestInput := &openapi3filter.RequestValidationInput{Request: r, PathParams: params, Route: route, Options: &openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}
 		if err := openapi3filter.ValidateRequest(r.Context(), requestInput); err != nil {
 			writeJSON(w, http.StatusBadRequest, payload{Code: "invalid_request", Message: "Permintaan tidak valid."})
 			return

@@ -8,7 +8,7 @@
     "pnpm": "12.14.0"
   },
   "scripts": {
-    "db:up": "docker compose -f infra/compose.yaml up -d --wait",
+    "db:up": "docker compose -f infra/compose.yaml up -d --wait postgres",
     "db:down": "docker compose -f infra/compose.yaml down",
     "api:dev": "go -C apps/api run ./cmd/rentaid serve",
     "api:build": "node scripts/build-api.mjs",
@@ -16,14 +16,21 @@
     "db:seed": "go -C apps/api run ./cmd/rentaid seed",
     "contracts:generate": "node scripts/generate.mjs",
     "contracts:check": "node scripts/contracts-check.mjs",
-    "test": "go -C apps/api test ./...",
-    "check": "node scripts/check.mjs"
+    "test": "node scripts/test-go.mjs",
+    "check": "node scripts/check.mjs",
+    "admin:dev": "pnpm --filter @rentaid/admin dev",
+    "admin:build": "pnpm --filter @rentaid/admin build",
+    "app:up": "docker compose -f infra/compose.yaml --profile app up -d --build --wait",
+    "app:down": "docker compose -f infra/compose.yaml --profile app down",
+    "test:admin-browser": "node scripts/test-admin-browser.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
     "eslint": "9.39.5",
     "globals": "16.5.0",
+    "playwright-core": "1.64.1",
     "prettier": "3.9.10",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1"
   }
 }

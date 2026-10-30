@@ -1,0 +1,17 @@
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/
+!apps/api/
+!apps/api/**
+!apps/admin/
+!apps/admin/**
+!packages/
+!packages/**
+!infra/
+!infra/nginx.conf
+**/node_modules
+**/dist
+**/.env
+**/.git

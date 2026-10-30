@@ -15,5 +15,45 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+
+  api:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: local
+      HTTP_ADDR: 0.0.0.0:8080
+      DATABASE_URL: postgres://rentaid:rentaid_local@postgres:5432/rentaid?sslmode=disable
+      ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      ["/bin/sh", "-c", "/app/rentaid migrate && exec /app/rentaid serve"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:8080/api/v1/ready",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  gateway:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: apps/admin/Dockerfile
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:
