@@ -77,7 +77,7 @@ func (s *Service) Update(ctx context.Context, id, name string) (Category, error)
 func (s *Service) Delete(ctx context.Context, id string) error {
 	result, err := s.Pool.Exec(ctx, `DELETE FROM categories WHERE id=$1`, id)
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+	if errors.As(err, &pgErr) && (pgErr.Code == "23503" || pgErr.Code == "23001") {
 		return ErrInUse
 	}
 	if err != nil {
