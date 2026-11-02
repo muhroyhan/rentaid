@@ -16,6 +16,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"rentaid.local/api/internal/auth"
+	"rentaid.local/api/internal/category"
 	"rentaid.local/api/internal/content"
 	"rentaid.local/api/internal/store"
 )
@@ -74,6 +75,7 @@ func NewWithContent(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthC
 	if svc != nil {
 		registerAuth(mux, svc, cfg)
 		registerAccounts(mux, svc, cfg)
+		registerCategories(mux, svc, cfg, &category.Service{Pool: svc.Pool, Clock: svc.Clock})
 		registerStores(mux, svc, cfg, &store.Service{Pool: svc.Pool, Clock: svc.Clock})
 		if pages != nil {
 			registerContent(mux, svc, cfg, pages)
