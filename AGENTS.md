@@ -56,7 +56,7 @@
 - Akun lokal email/password untuk pendaftaran, login, profil, dan logout. Profil memuat nama dan nomor telepon; telepon wajib diisi sebelum checkout. Satu akun dapat menjadi penyewa dan memiliki satu toko.
 - Status pengguna: `active` atau `suspended`. Suspend mencabut semua sesi dan menolak login.
 - Vendor mendaftarkan toko di web dengan nama, alamat, dan nomor telepon yang wajib diisi; admin menyetujuinya sebelum toko beroperasi. Status toko: `pending`, `approved`, `rejected`, `suspended`. Toko yang ditolak dapat diedit dan diajukan ulang (kembali `pending`). Admin dapat men-suspend dan mengaktifkan kembali toko, dan mencatat alasan penolakan atau suspend. Toko `suspended` tidak tampil di katalog dan tidak menerima pesanan baru, tetapi pesanan yang sudah ada tetap dapat diserahkan, dikembalikan, atau dibatalkan.
-- Vendor mengelola produk, foto, kategori, harga harian, jumlah stok, dan publikasi. Vendor tidak dapat menurunkan stok di bawah pemakaian puncak oleh pesanan aktif (lihat aturan stok) pada hari ini dan tanggal mendatang. Produk yang pernah dipesan tidak dihapus permanen; ia diarsipkan atau di-unpublish, dan pesanan berjalan tidak terpengaruh karena snapshot.
+- Produk mewajibkan nama, deskripsi, kategori, harga harian, dan stok; foto opsional. Publikasi vendor langsung tampil jika toko disetujui dan produk tidak disembunyikan. Admin dapat menyembunyikan dan mengaktifkan kembali produk dengan alasan yang tercatat. Vendor mengelola produk, foto, kategori, harga harian, jumlah stok, dan publikasi. Vendor tidak dapat menurunkan stok di bawah pemakaian puncak oleh pesanan aktif (lihat aturan stok) pada hari ini dan tanggal mendatang. Produk yang pernah dipesan tidak dihapus permanen; ia diarsipkan atau di-unpublish, dan pesanan berjalan tidak terpengaruh karena snapshot.
 - Kategori satu level. Kategori tidak dapat dihapus selama dipakai produk (409); namanya boleh diubah. Saat tabel produk dibuat, `category_id` wajib memiliki foreign key ke `categories(id)` dengan `ON DELETE RESTRICT` atau `NO ACTION`.
 - Admin mengelola pengguna, persetujuan toko, moderasi produk, kategori, pesanan, serta konten beranda, FAQ, tentang, syarat penggunaan, dan kebijakan privasi.
 - Web mendukung penyewa dan vendor. Android mendukung penyewa: autentikasi, katalog, detail produk, pilihan tanggal dan kuantitas, checkout, pembayaran simulasi, serta riwayat dan detail pesanan.
@@ -131,10 +131,10 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 01 Workspace ke backend yang dapat dijalankan — migrasi/seed PostgreSQL, readiness saat database mati, persistensi volume, guard merek, kontrak, build, dan `pnpm check` lulus; golangci-lint dijalankan via Docker karena Application Control Windows.
 - [x] 02 Akun admin ke sesi yang terlindungi — integrasi PostgreSQL, role, CSRF/Origin, pembatasan login, expiry/logout, dan browser melalui Vite serta Compose lulus.
 - [x] 03 Konten CMS ke konten publik — draft/publikasi, validasi media, otorisasi, persistensi volume, API publik, dan browser pada database sementara lulus.
-- [ ] 04 Pengguna ke persetujuan toko - registrasi/profil, keputusan dan riwayat toko, seed, pencabutan sesi, integrasi PostgreSQL, dan browser lulus; pengujian publikasi produk tertunda hingga Phase 06 saat produknya tersedia.
-- [ ] 05 Kategori ke referensi katalog - API publik, admin, dan uji foreign key pada fixture lulus; integrasi dengan produk sebenarnya menunggu Phase 06.
-- [ ] 06 Produk ke moderasi katalog
-- [ ] Gate A
+- [x] 04 Pengguna ke persetujuan toko - registrasi/profil, keputusan toko, seed, pencabutan sesi, dan publikasi produk berdasarkan status toko teruji.
+- [x] 05 Kategori ke referensi katalog - API publik, admin, penghapusan kategori terpakai, dan perubahan nama dengan produk sebenarnya teruji.
+- [x] 06 Produk ke moderasi katalog - kepemilikan, publikasi, arsip, foto, moderasi, katalog publik, seed, dan pengujian PostgreSQL/browser lulus; aturan pesanan dan stok aktif dilanjutkan di Phase 11.
+- [x] Gate A - admin/CMS akun, toko, kategori, produk, media, dan konten terhubung ke API Go dan PostgreSQL; uji integrasi dan browser lulus.
 - [ ] 07 Pengunjung ke akun dan pengajuan vendor
 - [ ] 08 Toko disetujui ke produk terpublikasi
 - [ ] 09 Katalog publik ke detail produk
@@ -173,4 +173,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:admin-content`: uji draft, publikasi, dan media melalui browser; gunakan database test terpisah dengan FAQ kosong.
 - `pnpm test:admin-stores`: uji keputusan toko dan penangguhan pengguna melalui browser pada database test terpisah.
 - `pnpm test:admin-categories`: uji pengelolaan kategori melalui browser pada database test terpisah.
+- `pnpm test:admin-products`: uji moderasi produk melalui browser dengan seed demo pada database test terpisah.
 - Build marketplace web dan Android belum tersedia; tambahkan perintah saat phase terkait selesai.

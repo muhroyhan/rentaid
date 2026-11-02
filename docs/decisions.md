@@ -27,3 +27,10 @@
 - Kategori memiliki nama dan UUID tanpa hierarki. Daftar publik diurutkan berdasarkan nama dan UUID untuk pagination deterministik; nama dibatasi 120 karakter dan tidak boleh kosong setelah spasi dihapus.
 - Produk Phase 06 wajib memakai foreign key `category_id` ke `categories(id)` dengan `ON DELETE RESTRICT` atau `NO ACTION`. API menerjemahkan kedua jenis pelanggaran foreign key menjadi 409. Pengujian saat ini menggunakan tabel produk sementara pada schema PostgreSQL terisolasi karena tabel produk belum ada.
 - Pemeriksaan checksum migrasi menerima konversi LF/CRLF yang tidak mengubah isi SQL, agar checkout Git Windows tidak membuat migrasi lama gagal; perubahan isi SQL tetap ditolak.
+
+## Phase 06 - Produk dan moderasi
+
+- Sesuai keputusan pengguna, nama, deskripsi, kategori, harga harian, dan stok wajib; foto bersifat opsional. Produk terbit langsung tampil bila tokonya disetujui dan produk tidak diarsipkan atau disembunyikan. Admin dapat menyembunyikan dan mengaktifkan kembali produk dengan alasan yang disimpan pada riwayat.
+- Maksimal sepuluh foto per produk untuk membatasi ukuran permintaan; unggahan milik vendor harus direferensikan oleh pemilik yang sama. Stok nol diperbolehkan untuk menandai barang yang sedang tidak tersedia, sedangkan harga harus positif. Arsip menonaktifkan publikasi; produk yang dipulihkan tetap harus diterbitkan kembali.
+- Operasi vendor mengunci baris toko saat memeriksa persetujuan agar penangguhan toko dan perubahan produk tidak saling melewati. Produk dan media publik disaring berdasarkan status produk dan toko. Pembatasan stok terhadap pesanan aktif dan aturan produk yang sudah dipesan dilaksanakan pada Phase 11.
+- Produk demo ditambahkan hanya saat `SEED_DEMO_PASSWORD` disediakan, menggunakan toko demo yang disetujui. Penanda seed menjaga seed berulang tidak menimpa perubahan produk demo.
