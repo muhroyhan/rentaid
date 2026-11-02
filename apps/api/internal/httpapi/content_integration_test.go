@@ -158,6 +158,46 @@ func TestContentIntegration(t *testing.T) {
 	if err = png.Encode(&encoded, pic); err != nil {
 		t.Fatal(err)
 	}
+	if rec := call("POST", "/api/v1/vendor/media", user, "application/octet-stream", encoded.Bytes()); rec.Code != 403 {
+		t.Fatalf("vendor without approved store: %d %s", rec.Code, rec.Body)
+	}
+	session, err := accounts.Authenticate(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `INSERT INTO stores(owner_id,name,address,phone,status,created_at,updated_at) VALUES($1,'Store','Jakarta','0812','approved',$2,$2)`, session.User.ID, clk.Now()); err != nil {
+		t.Fatal(err)
+	}
+	recVendor := call("POST", "/api/v1/vendor/media", user, "application/octet-stream", encoded.Bytes())
+	if recVendor.Code != 201 {
+		t.Fatalf("vendor media upload: %d %s", recVendor.Code, recVendor.Body)
+	}
+	var vendorMedia content.Media
+	if err = json.Unmarshal(recVendor.Body.Bytes(), &vendorMedia); err != nil {
+		t.Fatal(err)
+	}
+	if rec := call("GET", "/api/v1/vendor/media/"+vendorMedia.ID, user, "", nil); rec.Code != 200 {
+		t.Fatalf("owner media: %d", rec.Code)
+	}
+	if rec := call("GET", "/api/v1/media/"+vendorMedia.ID, "", "", nil); rec.Code != 404 {
+		t.Fatalf("unpublished vendor media leaked: %d", rec.Code)
+	}
+	if _, err = accounts.Register(ctx, "other@example.test", "Test-password-phase03!", "Other", ""); err != nil {
+		t.Fatal(err)
+	}
+	other, _, err := accounts.Login(ctx, "other@example.test", "Test-password-phase03!", "android")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := call("GET", "/api/v1/vendor/media/"+vendorMedia.ID, other, "", nil); rec.Code != 404 {
+		t.Fatalf("other vendor media: %d", rec.Code)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE stores SET status='suspended' WHERE owner_id=$1`, session.User.ID); err != nil {
+		t.Fatal(err)
+	}
+	if rec := call("POST", "/api/v1/vendor/media", user, "application/octet-stream", encoded.Bytes()); rec.Code != 403 {
+		t.Fatalf("suspended upload: %d", rec.Code)
+	}
 	var jpegBytes bytes.Buffer
 	if err = jpeg.Encode(&jpegBytes, pic, nil); err != nil {
 		t.Fatal(err)
