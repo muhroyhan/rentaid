@@ -211,14 +211,15 @@ func (s *Service) ChangeState(ctx context.Context, owner, id, action string, val
 	if err != nil {
 		return Product{}, err
 	}
-	if action == "publish" {
+	switch action {
+	case "publish":
 		if value && archived {
 			return Product{}, ErrConflict
 		}
 		_, err = tx.Exec(ctx, `UPDATE products SET published=$2,updated_at=$3 WHERE id=$1`, id, value, s.Clock.Now().UTC())
-	} else if action == "archive" {
+	case "archive":
 		_, err = tx.Exec(ctx, `UPDATE products SET archived=$2,published=CASE WHEN $2 THEN false ELSE published END,updated_at=$3 WHERE id=$1`, id, value, s.Clock.Now().UTC())
-	} else {
+	default:
 		return Product{}, ErrInvalid
 	}
 	if err != nil {

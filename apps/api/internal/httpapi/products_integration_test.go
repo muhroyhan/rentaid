@@ -150,6 +150,9 @@ func TestProductsIntegration(t *testing.T) {
 	if rec = call("GET", "/api/v1/products/"+p.ID, "", nil); rec.Code != 404 {
 		t.Fatalf("draft leaked: %d", rec.Code)
 	}
+	if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
+		t.Fatalf("draft listed: %d %s", rec.Code, rec.Body)
+	}
 	if rec = call("PUT", "/api/v1/vendor/products/"+p.ID, otherToken, input); rec.Code != 404 {
 		t.Fatalf("other owner edit: %d %s", rec.Code, rec.Body)
 	}
@@ -207,14 +210,37 @@ func TestProductsIntegration(t *testing.T) {
 	if rec = call("GET", "/api/v1/products/"+p.ID, "", nil); rec.Code != 404 {
 		t.Fatalf("hidden product: %d", rec.Code)
 	}
+	if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
+		t.Fatalf("hidden listed: %d %s", rec.Code, rec.Body)
+	}
 	if rec = call("GET", "/api/v1/admin/products/"+p.ID, admin, nil); rec.Code != 200 || !strings.Contains(rec.Body.String(), "Perlu ditinjau") {
 		t.Fatalf("moderation history: %d %s", rec.Code, rec.Body)
 	}
 	if rec = call("POST", "/api/v1/admin/products/"+p.ID+"/moderation", admin, map[string]any{"hidden": false, "reason": "Sudah diperbaiki"}); rec.Code != 200 {
 		t.Fatalf("restore: %d %s", rec.Code, rec.Body)
 	}
+	for _, status := range []string{"pending", "rejected"} {
+		if _, err = pool.Exec(ctx, `UPDATE stores SET status=$2 WHERE id=$1`, storeID, status); err != nil {
+			t.Fatal(err)
+		}
+		if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
+			t.Fatalf("%s listed: %d %s", status, rec.Code, rec.Body)
+		}
+		if rec = call("PUT", "/api/v1/vendor/products/"+p.ID+"/publication", token, map[string]bool{"value": true}); rec.Code != 403 {
+			t.Fatalf("%s publication: %d", status, rec.Code)
+		}
+		if rec = call("GET", "/api/v1/products/"+p.ID, "", nil); rec.Code != 404 {
+			t.Fatalf("%s store leaked: %d", status, rec.Code)
+		}
+	}
 	if _, err = pool.Exec(ctx, `UPDATE stores SET status='suspended' WHERE id=$1`, storeID); err != nil {
 		t.Fatal(err)
+	}
+	if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
+		t.Fatalf("suspended listed: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/media/"+photo.ID, "", nil); rec.Code != 404 {
+		t.Fatalf("suspended photo leaked: %d", rec.Code)
 	}
 	if rec = call("GET", "/api/v1/products/"+p.ID, "", nil); rec.Code != 404 {
 		t.Fatalf("suspended store leaked: %d", rec.Code)
@@ -227,6 +253,9 @@ func TestProductsIntegration(t *testing.T) {
 	}
 	if rec = call("PUT", "/api/v1/vendor/products/"+p.ID+"/archive", token, map[string]bool{"value": true}); rec.Code != 200 {
 		t.Fatalf("archive: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
+		t.Fatalf("archived listed: %d %s", rec.Code, rec.Body)
 	}
 	if rec = call("GET", "/api/v1/products/"+p.ID, "", nil); rec.Code != 404 {
 		t.Fatalf("archived leaked: %d", rec.Code)
