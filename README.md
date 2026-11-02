@@ -92,3 +92,9 @@ API pemilik tersedia di `/api/v1/store` dan riwayatnya di `/api/v1/store/history
 Untuk membuat empat akun dan toko demo opsional, tetapkan `SEED_DEMO_PASSWORD` (minimal 12 karakter) sebelum menjalankan `pnpm db:seed`, bersama variabel seed admin seperti di atas. Akunnya `demo.pending@example.test`, `demo.approved@example.test`, `demo.rejected@example.test`, dan `demo.suspended@example.test`, semuanya menggunakan password demo tersebut. Seed berulang tidak mengubah akun atau password yang sudah ada. Untuk Compose, tambahkan `-e SEED_DEMO_PASSWORD` pada perintah `docker compose ... exec` yang dijelaskan di bagian Phase 02. Hapus variabel password dari environment setelah selesai.
 
 Untuk memeriksa alur admin melalui browser, gunakan layanan dan database test terpisah lalu tetapkan `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH`; jalankan `pnpm test:admin-stores`. Test membuat akun dan toko baru serta mengubah statusnya, sehingga tidak boleh diarahkan ke data pengguna. Pengujian bahwa produk dari toko belum disetujui atau ditangguhkan tidak dapat dipublikasikan dilakukan pada Phase 06, ketika fitur produk tersedia.
+
+## Phase 05 - Kategori katalog
+
+Admin dapat menambahkan, mengubah nama, dan menghapus kategori melalui panel. Endpoint publik `GET /api/v1/categories` mendukung `page` dan `page_size` (default 20, maksimal 50). Perubahan nama mempertahankan UUID kategori. Penghapusan kategori yang dirujuk foreign key produk ditolak dengan respons 409.
+
+`pnpm test:admin-categories` memeriksa alur kategori di browser. Tetapkan variabel `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH` seperti pada test admin lainnya, dan gunakan database test terpisah. Pengujian foreign key saat ini menggunakan tabel produk sementara; integrasi dengan produk sebenarnya dilakukan pada Phase 06.

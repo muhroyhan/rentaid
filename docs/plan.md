@@ -40,9 +40,9 @@ Fokus awal pada akun, toko, katalog, dan konten. Panel admin untuk pesanan, pemb
 
 ### Phase 06 — Produk ke moderasi katalog
 
-- Task berurutan: (1) buat produk, foto, harga harian, stok, status publikasi/arsip, dan relasi toko/kategori; (2) buat API vendor berdasarkan kepemilikan dan katalog publik (pagination deterministik); (3) buat daftar/detail serta moderasi di admin; (4) seed variasi produk.
+- Task berurutan: (1) buat produk, foto, harga harian, stok, status publikasi/arsip, dan relasi toko/kategori dengan foreign key kategori yang melarang penghapusan kategori terpakai; (2) buat API vendor berdasarkan kepemilikan dan katalog publik (pagination deterministik); (3) buat daftar/detail serta moderasi di admin; (4) seed variasi produk.
 - Selesai: admin dapat memoderasi produk dan katalog publik hanya menampilkan produk yang layak ditampilkan.
-- Test: harga/stok tidak valid dan perubahan oleh vendor lain ditolak; produk nonpublik, diarsipkan, atau dari toko belum disetujui/suspended tidak muncul di katalog; pagination tidak menggandakan atau melewatkan item.
+- Test: harga/stok tidak valid dan perubahan oleh vendor lain ditolak; produk nonpublik, diarsipkan, atau dari toko belum disetujui/suspended tidak muncul di katalog; penghapusan kategori terpakai ditolak dan perubahan nama mempertahankan referensi produk; pagination tidak menggandakan atau melewatkan item.
 - Catatan: aturan "stok tidak boleh di bawah pemakaian pesanan aktif" dan "produk yang pernah dipesan hanya diarsipkan" diberlakukan penuh di Phase 11 saat pesanan ada; di phase ini siapkan titik pemeriksaannya.
 
 Gate A: admin/CMS berfungsi untuk akun, persetujuan toko, kategori, produk, media, dan konten melalui API Go dan PostgreSQL.

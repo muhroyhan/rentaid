@@ -21,3 +21,9 @@
 - Pengajuan toko mewajibkan nama, alamat, dan nomor telepon sesuai keputusan pengguna. Penolakan hanya dari `pending`, persetujuan hanya dari `pending`, penangguhan hanya dari `approved`, dan pengaktifan kembali hanya dari `suspended`. Pengajuan ulang dari `rejected` menyimpan data baru dan kembali ke `pending`. Setiap perubahan status dicatat bersama aktor, waktu, dan alasan; alasan wajib pada penolakan dan penangguhan.
 - `SEED_DEMO_PASSWORD` mengaktifkan seed opsional untuk empat akun demo beralamat `demo.<status>@example.test`. Seed atomik, tidak mengubah akun yang sudah ada, dan menggunakan akun admin seed sebagai aktor keputusan contoh.
 - Produk belum tersedia hingga Phase 06. Pemeriksaan status toko disediakan sebagai `store.Service.Approved`; semua operasi vendor dan publikasi produk harus menerapkannya di Phase 06, disertai pengujian produk sesungguhnya.
+
+## Phase 05 - Kategori katalog
+
+- Kategori memiliki nama dan UUID tanpa hierarki. Daftar publik diurutkan berdasarkan nama dan UUID untuk pagination deterministik; nama dibatasi 120 karakter dan tidak boleh kosong setelah spasi dihapus.
+- Produk Phase 06 wajib memakai foreign key `category_id` ke `categories(id)` dengan `ON DELETE RESTRICT` atau `NO ACTION`. API menerjemahkan kedua jenis pelanggaran foreign key menjadi 409. Pengujian saat ini menggunakan tabel produk sementara pada schema PostgreSQL terisolasi karena tabel produk belum ada.
+- Pemeriksaan checksum migrasi menerima konversi LF/CRLF yang tidak mengubah isi SQL, agar checkout Git Windows tidak membuat migrasi lama gagal; perubahan isi SQL tetap ditolak.
