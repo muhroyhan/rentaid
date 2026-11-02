@@ -98,3 +98,11 @@ Untuk memeriksa alur admin melalui browser, gunakan layanan dan database test te
 Admin dapat menambahkan, mengubah nama, dan menghapus kategori melalui panel. Endpoint publik `GET /api/v1/categories` mendukung `page` dan `page_size` (default 20, maksimal 50). Perubahan nama mempertahankan UUID kategori. Penghapusan kategori yang dirujuk foreign key produk ditolak dengan respons 409.
 
 `pnpm test:admin-categories` memeriksa alur kategori di browser. Tetapkan variabel `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH` seperti pada test admin lainnya, dan gunakan database test terpisah. Pengujian foreign key saat ini menggunakan tabel produk sementara; integrasi dengan produk sebenarnya dilakukan pada Phase 06.
+
+## Phase 06 - Produk dan moderasi katalog
+
+Vendor dengan toko yang disetujui dapat menggunakan API `/api/v1/vendor/products` untuk membuat dan mengubah produk, mengatur publikasi dan arsip, serta mengunggah foto melalui `/api/v1/vendor/media`. Nama, deskripsi, kategori, harga harian, dan stok wajib; foto opsional (maksimal sepuluh). Harga harus positif dan stok boleh nol. Antarmuka vendor menyusul pada Phase 08.
+
+Admin dapat meninjau produk dan riwayat moderasi melalui panel. Menyembunyikan atau mengaktifkan kembali produk memerlukan alasan. API publik `/api/v1/products` hanya menampilkan produk terbit yang tidak diarsipkan atau disembunyikan dan berasal dari toko yang disetujui. Saat `SEED_DEMO_PASSWORD` disediakan pada `pnpm db:seed`, seed juga membuat beberapa kategori dan produk demo tanpa menimpa produk demo yang sudah ada.
+
+Jalankan `pnpm test:admin-products` pada database test terpisah yang sudah diberi seed demo; tetapkan variabel browser seperti test admin lainnya. Test mengubah status moderasi produk demo dan menyimpan riwayat. Pengujian stok terhadap pesanan aktif dan pengarsipan produk yang pernah dipesan dilakukan pada Phase 11.

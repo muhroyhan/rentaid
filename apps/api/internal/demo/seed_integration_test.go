@@ -61,6 +61,23 @@ func TestSeedIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT count(DISTINCT status) FROM stores`).Scan(&count); err != nil || count != 4 {
 		t.Fatalf("fixture statuses: %d %v", count, err)
 	}
+	if err = SeedProducts(ctx, svc); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE products SET name='Edited demo' WHERE id=(SELECT product_id FROM demo_product_seeds WHERE seed_key='camera')`); err != nil {
+		t.Fatal(err)
+	}
+	if err = SeedProducts(ctx, svc); err != nil {
+		t.Fatal(err)
+	}
+	var products int
+	var saved string
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM demo_product_seeds`).Scan(&products); err != nil || products != 3 {
+		t.Fatalf("seed products: %d %v", products, err)
+	}
+	if err = pool.QueryRow(ctx, `SELECT name FROM products WHERE id=(SELECT product_id FROM demo_product_seeds WHERE seed_key='camera')`).Scan(&saved); err != nil || saved != "Edited demo" {
+		t.Fatalf("seed overwrote product: %s %v", saved, err)
+	}
 	if _, _, err = svc.Login(ctx, "demo.pending@example.test", "Demo-password-2026!", "android"); err != nil {
 		t.Fatalf("seed changed password: %v", err)
 	}

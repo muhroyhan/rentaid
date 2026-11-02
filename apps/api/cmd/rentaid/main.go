@@ -67,7 +67,10 @@ func run(ctx context.Context, args []string, logger *slog.Logger) error {
 			return err
 		}
 		if password := os.Getenv("SEED_DEMO_PASSWORD"); password != "" {
-			return demo.Seed(ctx, svc, os.Getenv("SEED_ADMIN_EMAIL"), password)
+			if err := demo.Seed(ctx, svc, os.Getenv("SEED_ADMIN_EMAIL"), password); err != nil {
+				return err
+			}
+			return demo.SeedProducts(ctx, svc)
 		}
 		return nil
 	}

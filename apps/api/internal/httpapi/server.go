@@ -18,6 +18,7 @@ import (
 	"rentaid.local/api/internal/auth"
 	"rentaid.local/api/internal/category"
 	"rentaid.local/api/internal/content"
+	"rentaid.local/api/internal/product"
 	"rentaid.local/api/internal/store"
 )
 
@@ -77,13 +78,15 @@ func NewWithContent(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthC
 		registerAccounts(mux, svc, cfg)
 		registerCategories(mux, svc, cfg, &category.Service{Pool: svc.Pool, Clock: svc.Clock})
 		registerStores(mux, svc, cfg, &store.Service{Pool: svc.Pool, Clock: svc.Clock})
+		registerProducts(mux, svc, cfg, &product.Service{Pool: svc.Pool, Clock: svc.Clock})
 		if pages != nil {
 			registerContent(mux, svc, cfg, pages)
+			registerVendorMedia(mux, svc, cfg, pages)
 		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		limit := int64(1 << 20)
-		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/admin/media" {
+		if r.Method == http.MethodPost && (r.URL.Path == "/api/v1/admin/media" || r.URL.Path == "/api/v1/vendor/media") {
 			limit = content.MaxBytes + 1
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, limit)
@@ -103,7 +106,7 @@ func NewWithContent(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthC
 				return
 			}
 		}
-		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/admin/media" {
+		if r.Method == http.MethodPost && (r.URL.Path == "/api/v1/admin/media" || r.URL.Path == "/api/v1/vendor/media") {
 			if r.ContentLength > content.MaxBytes {
 				errorJSON(w, http.StatusRequestEntityTooLarge, "file_too_large", "Ukuran gambar maksimal 5 MB.")
 				return
