@@ -149,6 +149,18 @@ func TestCategoriesIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT c.name FROM product_fixture p JOIN categories c ON c.id=p.category_id`).Scan(&refName); err != nil || refName != "Kamera Digital" {
 		t.Fatalf("reference changed: %s %v", refName, err)
 	}
+	if _, err = pool.Exec(ctx, `CREATE TABLE product_fixture_no_action (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), category_id uuid NOT NULL REFERENCES categories(id) ON DELETE NO ACTION)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `INSERT INTO product_fixture_no_action(category_id) VALUES($1)`, second.ID); err != nil {
+		t.Fatal(err)
+	}
+	if rec = call("DELETE", "/api/v1/admin/categories/"+second.ID, admin, nil); rec.Code != 409 {
+		t.Fatalf("no action in-use: %d %s", rec.Code, rec.Body)
+	}
+	if _, err = pool.Exec(ctx, `DELETE FROM product_fixture_no_action`); err != nil {
+		t.Fatal(err)
+	}
 	if rec = call("DELETE", "/api/v1/admin/categories/"+second.ID, user, nil); rec.Code != 403 {
 		t.Fatalf("delete user: %d", rec.Code)
 	}
