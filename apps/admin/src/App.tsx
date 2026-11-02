@@ -1,6 +1,7 @@
 import { createApiClient } from "@rentaid/api-client";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ContentEditor } from "./ContentEditor";
+import { ProductManagement } from "./ProductManagement";
 import { CategoryManagement } from "./CategoryManagement";
 import { UserManagement } from "./UserManagement";
 import { StoreManagement } from "./StoreManagement";
@@ -156,6 +157,12 @@ export function App() {
           )}
           {session.csrfToken && (
             <CategoryManagement
+              csrfToken={session.csrfToken}
+              onExpired={expireSession}
+            />
+          )}
+          {session.csrfToken && (
+            <ProductManagement
               csrfToken={session.csrfToken}
               onExpired={expireSession}
             />

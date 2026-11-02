@@ -827,3 +827,15 @@ input::placeholder {
 .content-panel .outline {
   margin: 3px;
 }
+
+.product-photos {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.product-photos img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 8px;
+}
