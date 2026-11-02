@@ -56,7 +56,7 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 		var previous string
 		err = tx.QueryRow(ctx, "SELECT checksum FROM schema_migrations WHERE version=$1", name).Scan(&previous)
 		if err == nil {
-			if previous != checksum {
+			if !matchesChecksum(script, previous) {
 				return fmt.Errorf("migration %s was modified after application", name)
 			}
 			continue
@@ -75,4 +75,16 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("commit migrations: %w", err)
 	}
 	return nil
+}
+
+// matchesChecksum tolerates Git line-ending conversion while rejecting SQL changes.
+func matchesChecksum(script []byte, previous string) bool {
+	normalized := strings.ReplaceAll(string(script), "\r\n", "\n")
+	for _, candidate := range []string{string(script), normalized, strings.ReplaceAll(normalized, "\n", "\r\n")} {
+		sum := sha256.Sum256([]byte(candidate))
+		if hex.EncodeToString(sum[:]) == previous {
+			return true
+		}
+	}
+	return false
 }
