@@ -87,7 +87,7 @@ Untuk test browser konten, gunakan API dan database test terpisah dengan halaman
 
 Pengguna mendaftar dan mengelola profil melalui API. Pengajuan toko mewajibkan nama, alamat, dan nomor telepon; setiap pengguna hanya memiliki satu toko. Admin melihat antrean toko yang menempatkan pengajuan menunggu di awal, memeriksa detail dan riwayat, lalu menyetujui atau menolak. Penolakan memerlukan alasan dan pemilik dapat memperbaiki data serta mengajukan ulang. Toko yang disetujui dapat ditangguhkan dengan alasan dan diaktifkan kembali. Admin juga dapat menangguhkan pengguna; seluruh sesi pengguna dicabut dan tidak kembali aktif setelah akun diaktifkan.
 
-API pemilik tersedia di `/api/v1/store` dan riwayatnya di `/api/v1/store/history`; endpoint admin tersedia di `/api/v1/admin/users` dan `/api/v1/admin/stores`. Kontrak lengkap tersedia di `packages/contracts/openapi.json`. Antarmuka pengajuan toko tersedia pada marketplace; pengelolaan produk vendor menyusul pada Phase 08.
+API pemilik tersedia di `/api/v1/store` dan riwayatnya di `/api/v1/store/history`; endpoint admin tersedia di `/api/v1/admin/users` dan `/api/v1/admin/stores`. Kontrak lengkap tersedia di `packages/contracts/openapi.json`. Antarmuka pengajuan toko dan pengelolaan produk vendor tersedia pada marketplace.
 
 Untuk membuat empat akun dan toko demo opsional, tetapkan `SEED_DEMO_PASSWORD` (minimal 12 karakter) sebelum menjalankan `pnpm db:seed`, bersama variabel seed admin seperti di atas. Akunnya `demo.pending@example.test`, `demo.approved@example.test`, `demo.rejected@example.test`, dan `demo.suspended@example.test`, semuanya menggunakan password demo tersebut. Seed berulang tidak mengubah akun atau password yang sudah ada. Untuk Compose, tambahkan `-e SEED_DEMO_PASSWORD` pada perintah `docker compose ... exec` yang dijelaskan di bagian Phase 02. Hapus variabel password dari environment setelah selesai.
 
@@ -101,7 +101,7 @@ Admin dapat menambahkan, mengubah nama, dan menghapus kategori melalui panel. En
 
 ## Phase 06 - Produk dan moderasi katalog
 
-Vendor dengan toko yang disetujui dapat menggunakan API `/api/v1/vendor/products` untuk membuat dan mengubah produk, mengatur publikasi dan arsip, serta mengunggah foto melalui `/api/v1/vendor/media`. Nama, deskripsi, kategori, harga harian, dan stok wajib; foto opsional (maksimal sepuluh). Harga harus positif dan stok boleh nol. Antarmuka vendor menyusul pada Phase 08.
+Vendor dengan toko yang disetujui dapat menggunakan API `/api/v1/vendor/products` untuk membuat dan mengubah produk, mengatur publikasi dan arsip, serta mengunggah foto melalui `/api/v1/vendor/media`. Nama, deskripsi, kategori, harga harian, dan stok wajib; foto opsional (maksimal sepuluh). Harga harus positif dan stok boleh nol. Antarmuka vendor tersedia di dashboard marketplace setelah toko disetujui.
 
 Admin dapat meninjau produk dan riwayat moderasi melalui panel. Menyembunyikan atau mengaktifkan kembali produk memerlukan alasan. API publik `/api/v1/products` hanya menampilkan produk terbit yang tidak diarsipkan atau disembunyikan dan berasal dari toko yang disetujui. Saat `SEED_DEMO_PASSWORD` disediakan pada `pnpm db:seed`, seed juga membuat beberapa kategori dan produk demo tanpa menimpa produk demo yang sudah ada.
 
@@ -114,3 +114,11 @@ Setelah API dan PostgreSQL berjalan, jalankan `pnpm web:dev` dan buka `http://12
 Pengunjung dapat mendaftar, masuk, memperbarui profil, mengajukan toko, melihat alasan penolakan, dan mengajukan ulang. Setelah admin menyetujui toko, dashboard vendor tersedia. Sesi browser menggunakan cookie HttpOnly dan token CSRF; saat render sisi server Next.js meneruskan cookie ke API Go. Endpoint dashboard dan pembacaan produk vendor menolak toko yang belum disetujui atau sedang ditangguhkan.
 
 `pnpm app:up` membangun dan menjalankan marketplace, admin, API, PostgreSQL, dan proxy Compose pada satu origin: marketplace `http://127.0.0.1:8081/`, admin `http://127.0.0.1:8081/admin/`. Untuk menguji alur browser secara menyeluruh, gunakan database terpisah, siapkan admin test, lalu tetapkan `E2E_WEB_URL`, `E2E_ADMIN_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH`; jalankan `pnpm test:marketplace-account`. Default URL adalah `http://127.0.0.1:3000` dan `http://127.0.0.1:5173`. Test membuat akun dan toko baru serta mengubah statusnya.
+
+## Phase 08 - Pengelolaan produk vendor
+
+Vendor dengan toko yang disetujui dapat membuka dashboard dan menambahkan atau mengedit produk dengan nama, deskripsi, kategori, harga harian, stok, serta maksimal sepuluh foto opsional. Simpan produk sebagai draft, lalu pilih **Terbitkan** agar tampil pada API katalog publik. Vendor juga dapat menghentikan publikasi, mengarsipkan, dan memulihkan produk sebagai draft. Label moderasi menunjukkan jika admin menyembunyikan produk. Harga harus positif; stok boleh nol.
+
+Foto JPEG, PNG, atau WebP dibatasi 5 MB per file dan divalidasi API dari isi file. Foto yang dihapus dari formulir atau tidak jadi digunakan tidak otomatis dihapus dari penyimpanan lokal. Aturan stok terhadap pesanan aktif dan produk yang pernah dipesan diterapkan pada Phase 11. Halaman katalog publik menyusul pada Phase 09; pada phase ini publikasi diverifikasi melalui API.
+
+Untuk uji browser, gunakan database test terpisah yang sudah diberi seed admin dan demo, lalu tetapkan `E2E_WEB_URL`, `E2E_ADMIN_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_VENDOR_PASSWORD`, dan `CHROME_PATH`. `E2E_VENDOR_PASSWORD` adalah password seed demo untuk `demo.approved@example.test`. Jalankan `pnpm test:vendor-products`. Test membuat dan mengubah produk serta akun dan toko test, dan memproses moderasi melalui admin.

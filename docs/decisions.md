@@ -40,3 +40,8 @@
 - Marketplace menggunakan Next.js App Router dan token bersama `packages/ui`; server membaca cookie sesi dan meneruskannya ke API menggunakan permintaan tanpa cache. Browser tetap mengirim permintaan API pada origin yang sama.
 - Endpoint `GET /api/v1/vendor/dashboard` memeriksa role pengguna dan persetujuan toko di Go; endpoint baca produk dan media vendor juga menolak toko yang belum disetujui atau ditangguhkan.
 - Compose melayani marketplace pada `/`, admin pada `/admin/`, dan API pada `/api/` melalui satu origin. `API_ORIGIN` dipakai server Next.js untuk menghubungi API internal.
+
+## Phase 08 - Antarmuka produk vendor
+
+- Formulir memakai klien OpenAPI untuk data dan status produk, serta `fetch` dengan body biner untuk upload foto karena tipe biner generator saat ini berupa string. Foto yang telah diunggah hanya terhubung ke produk setelah formulir disimpan; aset yang dilepas belum dibersihkan otomatis.
+- Kategori diambil per halaman dengan ukuran 50 sampai habis; produk vendor ditampilkan 20 per halaman. Formulir menampilkan validasi API dan status moderasi, serta meminta konfirmasi saat membatalkan perubahan yang belum disimpan.

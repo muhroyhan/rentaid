@@ -136,7 +136,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 06 Produk ke moderasi katalog - kepemilikan, publikasi, arsip, foto, moderasi, katalog publik, seed, dan pengujian PostgreSQL/browser lulus; aturan pesanan dan stok aktif dilanjutkan di Phase 11.
 - [x] Gate A - admin/CMS akun, toko, kategori, produk, media, dan konten terhubung ke API Go dan PostgreSQL; uji integrasi dan browser lulus.
 - [x] 07 Pengunjung ke akun dan pengajuan vendor - Next.js, akun, profil, pengajuan dan pengajuan ulang, persetujuan, pembatasan API, SSR, serta E2E lokal dan Compose lulus.
-- [ ] 08 Toko disetujui ke produk terpublikasi
+- [x] 08 Toko disetujui ke produk terpublikasi - daftar, formulir, foto, publikasi, arsip, moderasi, validasi, dan E2E lintas vendor melalui dev serta Compose lulus.
 - [ ] 09 Katalog publik ke detail produk
 - [ ] 10 Detail produk ke penawaran harga
 - [ ] 11 Penawaran harga ke checkout dengan hold stok
@@ -176,4 +176,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:admin-products`: uji moderasi produk melalui browser dengan seed demo pada database test terpisah.
 - `pnpm web:dev` / `pnpm web:build`: jalankan / build marketplace Next.js.
 - `pnpm test:marketplace-account`: uji alur akun, pengajuan toko, persetujuan, dan dashboard vendor melalui browser pada database terpisah.
+- `pnpm test:vendor-products`: uji produk, foto, publikasi, moderasi, arsip, dan kepemilikan melalui browser pada database demo terpisah.
 - Build Android belum tersedia; tambahkan perintah saat phase terkait selesai.
