@@ -80,7 +80,12 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 // matchesChecksum tolerates Git line-ending conversion while rejecting SQL changes.
 func matchesChecksum(script []byte, previous string) bool {
 	normalized := strings.ReplaceAll(string(script), "\r\n", "\n")
-	for _, candidate := range []string{string(script), normalized, strings.ReplaceAll(normalized, "\n", "\r\n")} {
+	candidates := []string{string(script), normalized, strings.ReplaceAll(normalized, "\n", "\r\n")}
+	// Windows PowerShell may append CRLF to otherwise LF content.
+	if strings.HasSuffix(normalized, "\n") {
+		candidates = append(candidates, strings.TrimSuffix(normalized, "\n")+"\r\n")
+	}
+	for _, candidate := range candidates {
 		sum := sha256.Sum256([]byte(candidate))
 		if hex.EncodeToString(sum[:]) == previous {
 			return true
