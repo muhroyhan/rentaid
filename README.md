@@ -40,7 +40,7 @@ pnpm api:build
 
 Untuk menjalankan test integrasi database, buat database khusus test menggunakan `docker compose -f infra/compose.yaml exec postgres psql -U rentaid -d postgres -c "CREATE DATABASE rentaid_test"`, tetapkan `$env:TEST_DATABASE_URL` ke URL PostgreSQL database tersebut pada port 5432, lalu jalankan `pnpm test`. Test integrasi dilewati jika variabel itu tidak tersedia. Seed membuat setting demo dan akun admin dari environment, serta menolak `APP_ENV=production`.
 
-Aplikasi marketplace web dan Android serta perintah build masing-masing belum tersedia pada phase ini.
+Aplikasi Android dan perintah build-nya belum tersedia pada phase ini.
 
 ## Phase 02 — Admin dan autentikasi
 
@@ -87,7 +87,7 @@ Untuk test browser konten, gunakan API dan database test terpisah dengan halaman
 
 Pengguna mendaftar dan mengelola profil melalui API. Pengajuan toko mewajibkan nama, alamat, dan nomor telepon; setiap pengguna hanya memiliki satu toko. Admin melihat antrean toko yang menempatkan pengajuan menunggu di awal, memeriksa detail dan riwayat, lalu menyetujui atau menolak. Penolakan memerlukan alasan dan pemilik dapat memperbaiki data serta mengajukan ulang. Toko yang disetujui dapat ditangguhkan dengan alasan dan diaktifkan kembali. Admin juga dapat menangguhkan pengguna; seluruh sesi pengguna dicabut dan tidak kembali aktif setelah akun diaktifkan.
 
-API pemilik tersedia di `/api/v1/store` dan riwayatnya di `/api/v1/store/history`; endpoint admin tersedia di `/api/v1/admin/users` dan `/api/v1/admin/stores`. Kontrak lengkap tersedia di `packages/contracts/openapi.json`. Antarmuka pengajuan pengguna dan produk vendor menyusul pada Phase 07 dan 08.
+API pemilik tersedia di `/api/v1/store` dan riwayatnya di `/api/v1/store/history`; endpoint admin tersedia di `/api/v1/admin/users` dan `/api/v1/admin/stores`. Kontrak lengkap tersedia di `packages/contracts/openapi.json`. Antarmuka pengajuan toko tersedia pada marketplace; pengelolaan produk vendor menyusul pada Phase 08.
 
 Untuk membuat empat akun dan toko demo opsional, tetapkan `SEED_DEMO_PASSWORD` (minimal 12 karakter) sebelum menjalankan `pnpm db:seed`, bersama variabel seed admin seperti di atas. Akunnya `demo.pending@example.test`, `demo.approved@example.test`, `demo.rejected@example.test`, dan `demo.suspended@example.test`, semuanya menggunakan password demo tersebut. Seed berulang tidak mengubah akun atau password yang sudah ada. Untuk Compose, tambahkan `-e SEED_DEMO_PASSWORD` pada perintah `docker compose ... exec` yang dijelaskan di bagian Phase 02. Hapus variabel password dari environment setelah selesai.
 
@@ -106,3 +106,11 @@ Vendor dengan toko yang disetujui dapat menggunakan API `/api/v1/vendor/products
 Admin dapat meninjau produk dan riwayat moderasi melalui panel. Menyembunyikan atau mengaktifkan kembali produk memerlukan alasan. API publik `/api/v1/products` hanya menampilkan produk terbit yang tidak diarsipkan atau disembunyikan dan berasal dari toko yang disetujui. Saat `SEED_DEMO_PASSWORD` disediakan pada `pnpm db:seed`, seed juga membuat beberapa kategori dan produk demo tanpa menimpa produk demo yang sudah ada.
 
 Jalankan `pnpm test:admin-products` pada database test terpisah yang sudah diberi seed demo; tetapkan variabel browser seperti test admin lainnya. Test mengubah status moderasi produk demo dan menyimpan riwayat. Pengujian stok terhadap pesanan aktif dan pengarsipan produk yang pernah dipesan dilakukan pada Phase 11.
+
+## Phase 07 - Akun marketplace dan pengajuan toko
+
+Setelah API dan PostgreSQL berjalan, jalankan `pnpm web:dev` dan buka `http://127.0.0.1:3000`. Marketplace menggunakan proxy Next.js untuk `/api`; `API_ORIGIN` default adalah `http://127.0.0.1:8080`. Tambahkan origin web ke `ALLOWED_ORIGINS` bila memakai konfigurasi sendiri. `pnpm web:build` membuat build produksi.
+
+Pengunjung dapat mendaftar, masuk, memperbarui profil, mengajukan toko, melihat alasan penolakan, dan mengajukan ulang. Setelah admin menyetujui toko, dashboard vendor tersedia. Sesi browser menggunakan cookie HttpOnly dan token CSRF; saat render sisi server Next.js meneruskan cookie ke API Go. Endpoint dashboard dan pembacaan produk vendor menolak toko yang belum disetujui atau sedang ditangguhkan.
+
+`pnpm app:up` membangun dan menjalankan marketplace, admin, API, PostgreSQL, dan proxy Compose pada satu origin: marketplace `http://127.0.0.1:8081/`, admin `http://127.0.0.1:8081/admin/`. Untuk menguji alur browser secara menyeluruh, gunakan database terpisah, siapkan admin test, lalu tetapkan `E2E_WEB_URL`, `E2E_ADMIN_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH`; jalankan `pnpm test:marketplace-account`. Default URL adalah `http://127.0.0.1:3000` dan `http://127.0.0.1:5173`. Test membuat akun dan toko baru serta mengubah statusnya.

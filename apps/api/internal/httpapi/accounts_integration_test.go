@@ -107,6 +107,15 @@ func TestAccountsPhase04(t *testing.T) {
 	if rec = call("PUT", "/api/v1/profile", user, map[string]string{"name": "Baru", "phone": "08123"}); rec.Code != 200 {
 		t.Fatalf("update profile: %d %s", rec.Code, rec.Body)
 	}
+	if rec = call("GET", "/api/v1/vendor/dashboard", admin, nil); rec.Code != 403 {
+		t.Fatalf("admin vendor dashboard: %d", rec.Code)
+	}
+	if rec = call("GET", "/api/v1/vendor/dashboard", "", nil); rec.Code != 401 {
+		t.Fatalf("anonymous dashboard: %d", rec.Code)
+	}
+	if rec = call("GET", "/api/v1/vendor/dashboard", user, nil); rec.Code != 403 {
+		t.Fatalf("no store dashboard: %d", rec.Code)
+	}
 	storeInput := map[string]string{"name": "Toko Satu", "address": "Jakarta", "phone": "08123"}
 	rec = call("POST", "/api/v1/store", user, storeInput)
 	if rec.Code != 201 {
@@ -118,6 +127,12 @@ func TestAccountsPhase04(t *testing.T) {
 	}
 	if rec = call("POST", "/api/v1/store", user, storeInput); rec.Code != 409 {
 		t.Fatalf("second store: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/vendor/products", user, nil); rec.Code != 403 {
+		t.Fatalf("pending products: %d", rec.Code)
+	}
+	if rec = call("GET", "/api/v1/vendor/dashboard", user, nil); rec.Code != 403 {
+		t.Fatalf("pending dashboard: %d %s", rec.Code, rec.Body)
 	}
 	gate := &store.Service{Pool: pool, Clock: clk}
 	if ok, e := gate.Approved(ctx, profile.ID); e != nil || ok {
@@ -153,11 +168,20 @@ func TestAccountsPhase04(t *testing.T) {
 	if rec = call("POST", "/api/v1/admin/stores/"+created.ID+"/decision", admin, map[string]string{"action": "approve", "reason": ""}); rec.Code != 200 {
 		t.Fatalf("approve: %d %s", rec.Code, rec.Body)
 	}
+	if rec = call("GET", "/api/v1/vendor/dashboard", user, nil); rec.Code != 200 {
+		t.Fatalf("approved dashboard: %d %s", rec.Code, rec.Body)
+	}
 	if ok, e := gate.Approved(ctx, profile.ID); e != nil || !ok {
 		t.Fatalf("approved gate: %t %v", ok, e)
 	}
 	if rec = call("POST", "/api/v1/admin/stores/"+created.ID+"/decision", admin, map[string]string{"action": "suspend", "reason": "Pemeriksaan"}); rec.Code != 200 {
 		t.Fatalf("suspend store: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/vendor/products", user, nil); rec.Code != 403 {
+		t.Fatalf("suspended products: %d", rec.Code)
+	}
+	if rec = call("GET", "/api/v1/vendor/dashboard", user, nil); rec.Code != 403 {
+		t.Fatalf("suspended dashboard: %d %s", rec.Code, rec.Body)
 	}
 	if ok, e := gate.Approved(ctx, profile.ID); e != nil || ok {
 		t.Fatalf("suspended gate: %t %v", ok, e)

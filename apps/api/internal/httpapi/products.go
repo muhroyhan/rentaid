@@ -41,7 +41,7 @@ func registerProducts(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 				return
 			}
 			if scope == "vendor" {
-				session, ok := requireUser(w, r, accounts, cfg)
+				session, ok := requireApprovedVendor(w, r, accounts, cfg)
 				if !ok {
 					return
 				}
@@ -64,7 +64,7 @@ func registerProducts(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 		return func(w http.ResponseWriter, r *http.Request) {
 			owner := ""
 			if scope == "vendor" {
-				session, ok := requireUser(w, r, accounts, cfg)
+				session, ok := requireApprovedVendor(w, r, accounts, cfg)
 				if !ok {
 					return
 				}

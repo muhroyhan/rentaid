@@ -26,7 +26,10 @@
     "test:admin-content": "node scripts/test-admin-content.mjs",
     "test:admin-stores": "node scripts/test-admin-stores.mjs",
     "test:admin-categories": "node scripts/test-admin-categories.mjs",
-    "test:admin-products": "node scripts/test-admin-products.mjs"
+    "test:admin-products": "node scripts/test-admin-products.mjs",
+    "web:dev": "pnpm --filter @rentaid/web dev",
+    "web:build": "pnpm --filter @rentaid/web build",
+    "test:marketplace-account": "node scripts/test-marketplace-account.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

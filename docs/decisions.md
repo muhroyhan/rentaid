@@ -9,7 +9,7 @@
 
 - **Login dan CSRF:** browser memperoleh token pra-login melalui endpoint khusus dengan cookie HttpOnly; Origin dan token diperiksa sebelum login. Setelah login, sesi menyimpan token CSRF per sesi. Android menerima bearer token tanpa cookie dan tidak memakai CSRF.
 - **Batas login:** default lima percobaan per alamat peer per 15 menit, dihitung dalam proses dan direset saat login sukses. Reverse proxy Compose lokal membuat koneksi dari proxy berbagi batas ini; untuk deployment multi-instance diperlukan pembatasan bersama di proxy/penyimpanan.
-- **Proxy lokal:** Vite meneruskan `/api` saat pengembangan; profil Compose `app` memakai Nginx pada port 8081 untuk `/admin/` dan `/api/`.
+- **Proxy lokal:** Vite dan Next.js meneruskan `/api` saat pengembangan; profil Compose `app` memakai Nginx pada port 8081 untuk marketplace, `/admin/`, dan `/api/`.
 - **Test Go:** jalankan test melalui image Docker yang dipin karena Application Control Windows dapat memblokir executable Go lokal; `TEST_DATABASE_URL` lokal diterjemahkan ke host Docker untuk integrasi.
 
 - **Konten CMS:** lima halaman tetap memakai key `home`, `faq`, `about`, `terms`, dan `privacy`; masing-masing memiliki judul, isi teks biasa, dan satu gambar opsional. Draft dan snapshot publik disimpan terpisah agar perubahan draft tidak langsung muncul publik.
@@ -34,3 +34,9 @@
 - Maksimal sepuluh foto per produk untuk membatasi ukuran permintaan; unggahan milik vendor harus direferensikan oleh pemilik yang sama. Stok nol diperbolehkan untuk menandai barang yang sedang tidak tersedia, sedangkan harga harus positif. Arsip menonaktifkan publikasi; produk yang dipulihkan tetap harus diterbitkan kembali.
 - Operasi vendor mengunci baris toko saat memeriksa persetujuan agar penangguhan toko dan perubahan produk tidak saling melewati. Produk dan media publik disaring berdasarkan status produk dan toko. Pembatasan stok terhadap pesanan aktif dan aturan produk yang sudah dipesan dilaksanakan pada Phase 11.
 - Produk demo ditambahkan hanya saat `SEED_DEMO_PASSWORD` disediakan, menggunakan toko demo yang disetujui. Penanda seed menjaga seed berulang tidak menimpa perubahan produk demo.
+
+## Phase 07 - Marketplace Next.js
+
+- Marketplace menggunakan Next.js App Router dan token bersama `packages/ui`; server membaca cookie sesi dan meneruskannya ke API menggunakan permintaan tanpa cache. Browser tetap mengirim permintaan API pada origin yang sama.
+- Endpoint `GET /api/v1/vendor/dashboard` memeriksa role pengguna dan persetujuan toko di Go; endpoint baca produk dan media vendor juga menolak toko yang belum disetujui atau ditangguhkan.
+- Compose melayani marketplace pada `/`, admin pada `/admin/`, dan API pada `/api/` melalui satu origin. `API_ORIGIN` dipakai server Next.js untuk menghubungi API internal.

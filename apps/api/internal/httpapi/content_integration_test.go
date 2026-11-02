@@ -189,6 +189,13 @@ func TestContentIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	otherSession, err := accounts.Authenticate(ctx, other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `INSERT INTO stores(owner_id,name,address,phone,status,created_at,updated_at) VALUES($1,'Other','Jakarta','0812','approved',$2,$2)`, otherSession.User.ID, clk.Now()); err != nil {
+		t.Fatal(err)
+	}
 	if rec := call("GET", "/api/v1/vendor/media/"+vendorMedia.ID, other, "", nil); rec.Code != 404 {
 		t.Fatalf("other vendor media: %d", rec.Code)
 	}
