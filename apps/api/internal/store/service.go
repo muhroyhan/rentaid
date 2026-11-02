@@ -129,7 +129,7 @@ func (s *Service) Resubmit(ctx context.Context, owner string, in Input) (Store, 
 	return v, nil
 }
 func (s *Service) List(ctx context.Context, page, size int) ([]Store, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT `+fields+` FROM stores ORDER BY created_at DESC,id DESC LIMIT $1 OFFSET $2`, size, (page-1)*size)
+	rows, err := s.Pool.Query(ctx, `SELECT `+fields+` FROM stores ORDER BY CASE WHEN status='pending' THEN 0 ELSE 1 END,created_at DESC,id DESC LIMIT $1 OFFSET $2`, size, (page-1)*size)
 	if err != nil {
 		return nil, err
 	}
