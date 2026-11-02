@@ -24,11 +24,14 @@ services:
     environment:
       APP_ENV: local
       HTTP_ADDR: 0.0.0.0:8080
+      MEDIA_DIR: /var/lib/rentaid/media
       DATABASE_URL: postgres://rentaid:rentaid_local@postgres:5432/rentaid?sslmode=disable
       ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - media_data:/var/lib/rentaid/media
     command:
       ["/bin/sh", "-c", "/app/rentaid migrate && exec /app/rentaid serve"]
     healthcheck:
@@ -57,3 +60,4 @@ services:
 
 volumes:
   postgres_data:
+  media_data:

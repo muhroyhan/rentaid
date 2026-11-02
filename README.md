@@ -1,4 +1,4 @@
-# Rentaid — fondasi Phase 01
+# Rentaid — pengembangan lokal
 
 Workspace ini berisi API Go, admin React + Vite, kontrak OpenAPI, klien TypeScript, dan PostgreSQL lokal. Ruang lingkup dan urutan implementasi ada di [AGENTS.md](AGENTS.md) dan [rencana pengembangan](docs/plan.md).
 
@@ -73,3 +73,14 @@ Remove-Item Env:SEED_ADMIN_PASSWORD
 `pnpm app:down` menghentikan aplikasi dan database tanpa menghapus volume. `SESSION_TTL_DAYS` default 14 hari, `LOGIN_RATE_LIMIT` default lima percobaan per 15 menit, dan `ALLOWED_ORIGINS` menentukan origin browser yang diizinkan.
 
 `pnpm test` menggunakan image Docker Go/lint yang dipin untuk menghindari pembatasan executable lokal Windows. Tetapkan `TEST_DATABASE_URL` ke database test terpisah untuk menjalankan test integrasi. Untuk test UI dengan Chrome/Chromium yang sudah terpasang, siapkan akun admin test, tetapkan `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH`, lalu jalankan `pnpm test:admin-browser`. Default URL browser adalah `http://127.0.0.1:8081`; `E2E_BASE_URL` dapat menggantinya.
+
+
+## Phase 03 — Konten dan media
+
+Setelah login admin, pilih Beranda, FAQ, Tentang, Syarat penggunaan, atau Kebijakan privasi. Isi judul dan konten sebagai teks biasa; gambar JPEG, PNG, atau WebP maksimal 5 MB bersifat opsional. **Simpan draft** menyimpan perubahan untuk admin. **Publikasikan** menyimpan lalu menerbitkan snapshot terbaru. Perubahan berikutnya tidak muncul di API publik sampai dipublikasikan kembali.
+
+API publik menyediakan `GET /api/v1/content/{key}` untuk key `home`, `faq`, `about`, `terms`, dan `privacy`. Gambar yang direferensikan versi publik tersedia di `GET /api/v1/media/{id}`; gambar draft hanya tersedia melalui endpoint admin.
+
+`MEDIA_DIR` menentukan lokasi media lokal. Default untuk `pnpm api:dev` adalah `.artifacts/media` di root repository; Compose menggunakan volume `media_data`. Cadangkan database dan volume media bersama agar referensi gambar tetap sesuai. Menghapus atau mengganti gambar dalam draft tidak langsung menghapus file dari penyimpanan.
+
+Untuk test browser konten, gunakan API dan database test terpisah dengan halaman FAQ kosong, lalu tetapkan `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH` seperti pada test admin. Jalankan `pnpm test:admin-content`. Test menulis dan memublikasikan FAQ sehingga tidak boleh diarahkan ke data pengguna.

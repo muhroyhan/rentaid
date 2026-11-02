@@ -1,5 +1,6 @@
 import { createApiClient } from "@rentaid/api-client";
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { ContentEditor } from "./ContentEditor";
 
 const api = createApiClient(window.location.origin);
 
@@ -27,6 +28,10 @@ export function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const expireSession = useCallback(() => {
+    setSession(null);
+    setError("Sesi berakhir. Silakan masuk kembali.");
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -123,6 +128,7 @@ export function App() {
                 Semua yang Anda butuhkan untuk mengelola Rentaid, dalam satu
                 tempat.
               </p>
+              <p className="signed-in-email">{session.user.email}</p>
             </div>
             <div className="status">
               <span /> Sesi aktif
@@ -133,26 +139,12 @@ export function App() {
               {error}
             </div>
           )}
-          <section className="account-card">
-            <div className="account-icon" aria-hidden="true">
-              ✳
-            </div>
-            <div>
-              <div className="card-label">MASUK SEBAGAI ADMIN</div>
-              <strong>{session.user.email}</strong>
-              <p>Akun Anda terhubung dan siap digunakan.</p>
-            </div>
-            <span className="account-arrow" aria-hidden="true">
-              ↗
-            </span>
-          </section>
-          <div className="next">
-            <span className="next-number">01</span>
-            <div>
-              <strong>Ruang kerja siap.</strong>
-              <p>Menu pengelolaan akan tersedia seiring pengembangan.</p>
-            </div>
-          </div>
+          {session.csrfToken && (
+            <ContentEditor
+              csrfToken={session.csrfToken}
+              onExpired={expireSession}
+            />
+          )}
         </main>
         <footer className="workspace-footer">
           <span>© Rentaid</span>

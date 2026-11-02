@@ -130,7 +130,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 
 - [x] 01 Workspace ke backend yang dapat dijalankan — migrasi/seed PostgreSQL, readiness saat database mati, persistensi volume, guard merek, kontrak, build, dan `pnpm check` lulus; golangci-lint dijalankan via Docker karena Application Control Windows.
 - [x] 02 Akun admin ke sesi yang terlindungi — integrasi PostgreSQL, role, CSRF/Origin, pembatasan login, expiry/logout, dan browser melalui Vite serta Compose lulus.
-- [ ] 03 Konten CMS ke konten publik
+- [x] 03 Konten CMS ke konten publik — draft/publikasi, validasi media, otorisasi, persistensi volume, API publik, dan browser pada database sementara lulus.
 - [ ] 04 Pengguna ke persetujuan toko
 - [ ] 05 Kategori ke referensi katalog
 - [ ] 06 Produk ke moderasi katalog
@@ -170,4 +170,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm admin:dev` / `pnpm admin:build`: jalankan panel admin Vite / build admin.
 - `pnpm app:up` / `pnpm app:down`: jalankan / hentikan API, PostgreSQL, dan proxy admin Compose tanpa menghapus volume.
 - `pnpm test:admin-browser`: uji login dan logout melalui browser; konfigurasi akun test dan Chrome dijelaskan di `README.md`.
+- `pnpm test:admin-content`: uji draft, publikasi, dan media melalui browser; gunakan database test terpisah dengan FAQ kosong.
 - Build marketplace web dan Android belum tersedia; tambahkan perintah saat phase terkait selesai.

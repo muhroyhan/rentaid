@@ -11,3 +11,7 @@
 - **Batas login:** default lima percobaan per alamat peer per 15 menit, dihitung dalam proses dan direset saat login sukses. Reverse proxy Compose lokal membuat koneksi dari proxy berbagi batas ini; untuk deployment multi-instance diperlukan pembatasan bersama di proxy/penyimpanan.
 - **Proxy lokal:** Vite meneruskan `/api` saat pengembangan; profil Compose `app` memakai Nginx pada port 8081 untuk `/admin/` dan `/api/`.
 - **Test Go:** jalankan test melalui image Docker yang dipin karena Application Control Windows dapat memblokir executable Go lokal; `TEST_DATABASE_URL` lokal diterjemahkan ke host Docker untuk integrasi.
+
+- **Konten CMS:** lima halaman tetap memakai key `home`, `faq`, `about`, `terms`, dan `privacy`; masing-masing memiliki judul, isi teks biasa, dan satu gambar opsional. Draft dan snapshot publik disimpan terpisah agar perubahan draft tidak langsung muncul publik.
+- **Media lokal:** upload berupa body biner; server memverifikasi dan mendekode JPEG/PNG/WebP, membatasi 5 MB dan 20 juta piksel, lalu memakai nama acak. Media publik hanya dapat dibaca jika direferensikan snapshot halaman yang sudah terbit; media draft dapat dilihat admin.
+- **Integrasi media:** klien TypeScript hasil generate digunakan untuk operasi JSON. Upload biner memakai `fetch` karena generator saat ini mengetik format OpenAPI `binary` sebagai string.
