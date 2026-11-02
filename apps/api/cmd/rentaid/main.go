@@ -18,6 +18,7 @@ import (
 	"rentaid.local/api/internal/clock"
 	"rentaid.local/api/internal/content"
 	"rentaid.local/api/internal/database"
+	"rentaid.local/api/internal/demo"
 	"rentaid.local/api/internal/httpapi"
 )
 
@@ -62,7 +63,13 @@ func run(ctx context.Context, args []string, logger *slog.Logger) error {
 		if err := svc.SeedAdmin(ctx, os.Getenv("SEED_ADMIN_EMAIL"), os.Getenv("SEED_ADMIN_PASSWORD")); err != nil {
 			return err
 		}
-		return database.Seed(ctx, pool, appEnv)
+		if err := database.Seed(ctx, pool, appEnv); err != nil {
+			return err
+		}
+		if password := os.Getenv("SEED_DEMO_PASSWORD"); password != "" {
+			return demo.Seed(ctx, svc, os.Getenv("SEED_ADMIN_EMAIL"), password)
+		}
+		return nil
 	}
 	pages := &content.Service{Pool: pool, Clock: clk, Dir: value("MEDIA_DIR", "../../.artifacts/media")}
 	handler, err := httpapi.NewWithContent(pool, logger, svc, httpapi.AuthConfig{SecureCookies: !strings.EqualFold(appEnv, "local"), AllowedOrigins: strings.Split(value("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081,http://127.0.0.1:8081"), ","), Limiter: &auth.Limiter{Clock: clk, Max: limit, Window: 15 * time.Minute}}, pages)
