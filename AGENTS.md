@@ -55,7 +55,7 @@
 
 - Akun lokal email/password untuk pendaftaran, login, profil, dan logout. Profil memuat nama dan nomor telepon; telepon wajib diisi sebelum checkout. Satu akun dapat menjadi penyewa dan memiliki satu toko.
 - Status pengguna: `active` atau `suspended`. Suspend mencabut semua sesi dan menolak login.
-- Vendor mendaftarkan toko di web; admin menyetujuinya sebelum toko beroperasi. Status toko: `pending`, `approved`, `rejected`, `suspended`. Toko yang ditolak dapat diedit dan diajukan ulang (kembali `pending`). Admin dapat men-suspend dan mengaktifkan kembali toko, dan mencatat alasan penolakan atau suspend. Toko `suspended` tidak tampil di katalog dan tidak menerima pesanan baru, tetapi pesanan yang sudah ada tetap dapat diserahkan, dikembalikan, atau dibatalkan.
+- Vendor mendaftarkan toko di web dengan nama, alamat, dan nomor telepon yang wajib diisi; admin menyetujuinya sebelum toko beroperasi. Status toko: `pending`, `approved`, `rejected`, `suspended`. Toko yang ditolak dapat diedit dan diajukan ulang (kembali `pending`). Admin dapat men-suspend dan mengaktifkan kembali toko, dan mencatat alasan penolakan atau suspend. Toko `suspended` tidak tampil di katalog dan tidak menerima pesanan baru, tetapi pesanan yang sudah ada tetap dapat diserahkan, dikembalikan, atau dibatalkan.
 - Vendor mengelola produk, foto, kategori, harga harian, jumlah stok, dan publikasi. Vendor tidak dapat menurunkan stok di bawah pemakaian puncak oleh pesanan aktif (lihat aturan stok) pada hari ini dan tanggal mendatang. Produk yang pernah dipesan tidak dihapus permanen; ia diarsipkan atau di-unpublish, dan pesanan berjalan tidak terpengaruh karena snapshot.
 - Kategori satu level. Kategori tidak dapat dihapus selama dipakai produk (409); namanya boleh diubah.
 - Admin mengelola pengguna, persetujuan toko, moderasi produk, kategori, pesanan, serta konten beranda, FAQ, tentang, syarat penggunaan, dan kebijakan privasi.
@@ -81,16 +81,16 @@
 
 ### Status pesanan
 
-| Dari | Aksi | Aktor | Ke | Efek |
-|---|---|---|---|---|
-| (baru) | checkout | penyewa | `pending_payment` | hold stok 15 menit |
-| `pending_payment` | bayar sukses | pemilik pesanan (simulator) | `confirmed` | pembayaran `succeeded` |
-| `pending_payment` | bayar gagal | pemilik pesanan (simulator) | `payment_failed` | stok dilepas |
-| `pending_payment` | kedaluwarsa | sistem (hold habis) atau simulator | `expired` | stok dilepas |
-| `pending_payment` | batal | penyewa, vendor toko, admin | `cancelled` | stok dilepas, tanpa refund |
-| `confirmed` | batal | penyewa, vendor toko, admin | `cancelled` | refund mock penuh |
-| `confirmed` | serah terima | vendor toko | `renting` | hanya antara `start_date` dan `end_date` (Asia/Jakarta) |
-| `renting` | pengembalian | vendor toko | `completed` | waktu pengembalian tercatat |
+| Dari              | Aksi         | Aktor                              | Ke                | Efek                                                    |
+| ----------------- | ------------ | ---------------------------------- | ----------------- | ------------------------------------------------------- |
+| (baru)            | checkout     | penyewa                            | `pending_payment` | hold stok 15 menit                                      |
+| `pending_payment` | bayar sukses | pemilik pesanan (simulator)        | `confirmed`       | pembayaran `succeeded`                                  |
+| `pending_payment` | bayar gagal  | pemilik pesanan (simulator)        | `payment_failed`  | stok dilepas                                            |
+| `pending_payment` | kedaluwarsa  | sistem (hold habis) atau simulator | `expired`         | stok dilepas                                            |
+| `pending_payment` | batal        | penyewa, vendor toko, admin        | `cancelled`       | stok dilepas, tanpa refund                              |
+| `confirmed`       | batal        | penyewa, vendor toko, admin        | `cancelled`       | refund mock penuh                                       |
+| `confirmed`       | serah terima | vendor toko                        | `renting`         | hanya antara `start_date` dan `end_date` (Asia/Jakarta) |
+| `renting`         | pengembalian | vendor toko                        | `completed`       | waktu pengembalian tercatat                             |
 
 - Status akhir: `completed`, `cancelled`, `expired`, `payment_failed`. Pembayaran gagal bersifat final; penyewa membuat pesanan baru. Pembayaran setelah hold berakhir ditolak.
 - Tidak ada pembatalan setelah serah terima; pesanan diselesaikan melalui pengembalian.
@@ -131,7 +131,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 01 Workspace ke backend yang dapat dijalankan — migrasi/seed PostgreSQL, readiness saat database mati, persistensi volume, guard merek, kontrak, build, dan `pnpm check` lulus; golangci-lint dijalankan via Docker karena Application Control Windows.
 - [x] 02 Akun admin ke sesi yang terlindungi — integrasi PostgreSQL, role, CSRF/Origin, pembatasan login, expiry/logout, dan browser melalui Vite serta Compose lulus.
 - [x] 03 Konten CMS ke konten publik — draft/publikasi, validasi media, otorisasi, persistensi volume, API publik, dan browser pada database sementara lulus.
-- [ ] 04 Pengguna ke persetujuan toko
+- [ ] 04 Pengguna ke persetujuan toko - registrasi/profil, keputusan dan riwayat toko, seed, pencabutan sesi, integrasi PostgreSQL, dan browser lulus; pengujian publikasi produk tertunda hingga Phase 06 saat produknya tersedia.
 - [ ] 05 Kategori ke referensi katalog
 - [ ] 06 Produk ke moderasi katalog
 - [ ] Gate A
@@ -171,4 +171,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm app:up` / `pnpm app:down`: jalankan / hentikan API, PostgreSQL, dan proxy admin Compose tanpa menghapus volume.
 - `pnpm test:admin-browser`: uji login dan logout melalui browser; konfigurasi akun test dan Chrome dijelaskan di `README.md`.
 - `pnpm test:admin-content`: uji draft, publikasi, dan media melalui browser; gunakan database test terpisah dengan FAQ kosong.
+- `pnpm test:admin-stores`: uji keputusan toko dan penangguhan pengguna melalui browser pada database test terpisah.
 - Build marketplace web dan Android belum tersedia; tambahkan perintah saat phase terkait selesai.
