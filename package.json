@@ -29,7 +29,8 @@
     "test:admin-products": "node scripts/test-admin-products.mjs",
     "web:dev": "pnpm --filter @rentaid/web dev",
     "web:build": "pnpm --filter @rentaid/web build",
-    "test:marketplace-account": "node scripts/test-marketplace-account.mjs"
+    "test:marketplace-account": "node scripts/test-marketplace-account.mjs",
+    "test:vendor-products": "node scripts/test-vendor-products.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

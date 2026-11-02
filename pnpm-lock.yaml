@@ -221,6 +221,9 @@ importers:
       '@rentaid/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@rentaid/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       next:
         specifier: 16.4.3
         version: 16.4.3(@types/node@24.10.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -259,6 +262,8 @@ importers:
       openapi-typescript:
         specifier: 7.13.0
         version: 7.13.0(typescript@5.9.3)
+
+  packages/ui: {}
 
 packages:
 
