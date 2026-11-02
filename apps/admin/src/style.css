@@ -791,3 +791,39 @@ input::placeholder {
     margin-bottom: 7px;
   }
 }
+
+.content-panel {
+  margin: 28px 0;
+  padding: 28px;
+  border: 1px solid #dce8dc;
+  border-radius: 16px;
+  background: #fff;
+  color: #254c3d;
+}
+.content-panel h2 {
+  margin: 0 0 10px;
+}
+.content-panel h3 {
+  margin-top: 28px;
+}
+.content-panel p {
+  line-height: 1.5;
+}
+.content-panel ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+.content-panel textarea {
+  display: block;
+  width: 100%;
+  min-height: 90px;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #cddfcb;
+  border-radius: 8px;
+  font: inherit;
+}
+.content-panel .outline {
+  margin: 3px;
+}

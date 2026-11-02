@@ -1,6 +1,8 @@
 import { createApiClient } from "@rentaid/api-client";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ContentEditor } from "./ContentEditor";
+import { UserManagement } from "./UserManagement";
+import { StoreManagement } from "./StoreManagement";
 
 const api = createApiClient(window.location.origin);
 
@@ -138,6 +140,18 @@ export function App() {
             <div className="alert" role="alert">
               {error}
             </div>
+          )}
+          {session.csrfToken && (
+            <UserManagement
+              csrfToken={session.csrfToken}
+              onExpired={expireSession}
+            />
+          )}
+          {session.csrfToken && (
+            <StoreManagement
+              csrfToken={session.csrfToken}
+              onExpired={expireSession}
+            />
           )}
           {session.csrfToken && (
             <ContentEditor

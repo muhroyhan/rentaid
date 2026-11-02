@@ -64,9 +64,14 @@ func (s *Service) Login(ctx context.Context, email, password, client string) (st
 	if client != "admin" && client != "marketplace" && client != "android" {
 		return "", Session{}, ErrForbidden
 	}
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return "", Session{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
 	var user User
 	var hash, status string
-	err := s.Pool.QueryRow(ctx, "SELECT id::text,email,password_hash,role,status FROM users WHERE email=$1", email).
+	err = tx.QueryRow(ctx, "SELECT id::text,email,password_hash,role,status FROM users WHERE email=$1 FOR UPDATE", email).
 		Scan(&user.ID, &user.Email, &hash, &user.Role, &status)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return "", Session{}, err
@@ -92,9 +97,12 @@ func (s *Service) Login(ctx context.Context, email, password, client string) (st
 	now := s.Clock.Now().UTC()
 	expiry := now.Add(s.TTL)
 	tokenHash := sha256.Sum256([]byte(token))
-	_, err = s.Pool.Exec(ctx, `INSERT INTO sessions(user_id,token_hash,csrf_token,created_at,expires_at)
+	_, err = tx.Exec(ctx, `INSERT INTO sessions(user_id,token_hash,csrf_token,created_at,expires_at)
         VALUES($1,$2,$3,$4,$5)`, user.ID, tokenHash[:], csrf, now, expiry)
 	if err != nil {
+		return "", Session{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
 		return "", Session{}, err
 	}
 	return token, Session{User: user, CSRFToken: csrf, ExpiresAt: expiry}, nil

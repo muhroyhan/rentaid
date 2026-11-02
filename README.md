@@ -42,7 +42,6 @@ Untuk menjalankan test integrasi database, buat database khusus test menggunakan
 
 Aplikasi marketplace web dan Android serta perintah build masing-masing belum tersedia pada phase ini.
 
-
 ## Phase 02 — Admin dan autentikasi
 
 Seed memerlukan email admin dan password minimal 12 karakter melalui environment. Seed tidak mengubah password admin yang sudah ada dan menolak berjalan pada `APP_ENV=production`.
@@ -74,7 +73,6 @@ Remove-Item Env:SEED_ADMIN_PASSWORD
 
 `pnpm test` menggunakan image Docker Go/lint yang dipin untuk menghindari pembatasan executable lokal Windows. Tetapkan `TEST_DATABASE_URL` ke database test terpisah untuk menjalankan test integrasi. Untuk test UI dengan Chrome/Chromium yang sudah terpasang, siapkan akun admin test, tetapkan `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH`, lalu jalankan `pnpm test:admin-browser`. Default URL browser adalah `http://127.0.0.1:8081`; `E2E_BASE_URL` dapat menggantinya.
 
-
 ## Phase 03 — Konten dan media
 
 Setelah login admin, pilih Beranda, FAQ, Tentang, Syarat penggunaan, atau Kebijakan privasi. Isi judul dan konten sebagai teks biasa; gambar JPEG, PNG, atau WebP maksimal 5 MB bersifat opsional. **Simpan draft** menyimpan perubahan untuk admin. **Publikasikan** menyimpan lalu menerbitkan snapshot terbaru. Perubahan berikutnya tidak muncul di API publik sampai dipublikasikan kembali.
@@ -84,3 +82,13 @@ API publik menyediakan `GET /api/v1/content/{key}` untuk key `home`, `faq`, `abo
 `MEDIA_DIR` menentukan lokasi media lokal. Default untuk `pnpm api:dev` adalah `.artifacts/media` di root repository; Compose menggunakan volume `media_data`. Cadangkan database dan volume media bersama agar referensi gambar tetap sesuai. Menghapus atau mengganti gambar dalam draft tidak langsung menghapus file dari penyimpanan.
 
 Untuk test browser konten, gunakan API dan database test terpisah dengan halaman FAQ kosong, lalu tetapkan `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH` seperti pada test admin. Jalankan `pnpm test:admin-content`. Test menulis dan memublikasikan FAQ sehingga tidak boleh diarahkan ke data pengguna.
+
+## Phase 04 - Pengguna dan persetujuan toko
+
+Pengguna mendaftar dan mengelola profil melalui API. Pengajuan toko mewajibkan nama, alamat, dan nomor telepon; setiap pengguna hanya memiliki satu toko. Admin melihat antrean toko yang menempatkan pengajuan menunggu di awal, memeriksa detail dan riwayat, lalu menyetujui atau menolak. Penolakan memerlukan alasan dan pemilik dapat memperbaiki data serta mengajukan ulang. Toko yang disetujui dapat ditangguhkan dengan alasan dan diaktifkan kembali. Admin juga dapat menangguhkan pengguna; seluruh sesi pengguna dicabut dan tidak kembali aktif setelah akun diaktifkan.
+
+API pemilik tersedia di `/api/v1/store` dan riwayatnya di `/api/v1/store/history`; endpoint admin tersedia di `/api/v1/admin/users` dan `/api/v1/admin/stores`. Kontrak lengkap tersedia di `packages/contracts/openapi.json`. Antarmuka pengajuan pengguna dan produk vendor menyusul pada Phase 07 dan 08.
+
+Untuk membuat empat akun dan toko demo opsional, tetapkan `SEED_DEMO_PASSWORD` (minimal 12 karakter) sebelum menjalankan `pnpm db:seed`, bersama variabel seed admin seperti di atas. Akunnya `demo.pending@example.test`, `demo.approved@example.test`, `demo.rejected@example.test`, dan `demo.suspended@example.test`, semuanya menggunakan password demo tersebut. Seed berulang tidak mengubah akun atau password yang sudah ada. Untuk Compose, tambahkan `-e SEED_DEMO_PASSWORD` pada perintah `docker compose ... exec` yang dijelaskan di bagian Phase 02. Hapus variabel password dari environment setelah selesai.
+
+Untuk memeriksa alur admin melalui browser, gunakan layanan dan database test terpisah lalu tetapkan `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, dan `CHROME_PATH`; jalankan `pnpm test:admin-stores`. Test membuat akun dan toko baru serta mengubah statusnya, sehingga tidak boleh diarahkan ke data pengguna. Pengujian bahwa produk dari toko belum disetujui atau ditangguhkan tidak dapat dipublikasikan dilakukan pada Phase 06, ketika fitur produk tersedia.

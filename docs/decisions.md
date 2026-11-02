@@ -15,3 +15,9 @@
 - **Konten CMS:** lima halaman tetap memakai key `home`, `faq`, `about`, `terms`, dan `privacy`; masing-masing memiliki judul, isi teks biasa, dan satu gambar opsional. Draft dan snapshot publik disimpan terpisah agar perubahan draft tidak langsung muncul publik.
 - **Media lokal:** upload berupa body biner; server memverifikasi dan mendekode JPEG/PNG/WebP, membatasi 5 MB dan 20 juta piksel, lalu memakai nama acak. Media publik hanya dapat dibaca jika direferensikan snapshot halaman yang sudah terbit; media draft dapat dilihat admin.
 - **Integrasi media:** klien TypeScript hasil generate digunakan untuk operasi JSON. Upload biner memakai `fetch` karena generator saat ini mengetik format OpenAPI `binary` sebagai string.
+
+## Phase 04 - Pengajuan toko dan akun demo
+
+- Pengajuan toko mewajibkan nama, alamat, dan nomor telepon sesuai keputusan pengguna. Penolakan hanya dari `pending`, persetujuan hanya dari `pending`, penangguhan hanya dari `approved`, dan pengaktifan kembali hanya dari `suspended`. Pengajuan ulang dari `rejected` menyimpan data baru dan kembali ke `pending`. Setiap perubahan status dicatat bersama aktor, waktu, dan alasan; alasan wajib pada penolakan dan penangguhan.
+- `SEED_DEMO_PASSWORD` mengaktifkan seed opsional untuk empat akun demo beralamat `demo.<status>@example.test`. Seed atomik, tidak mengubah akun yang sudah ada, dan menggunakan akun admin seed sebagai aktor keputusan contoh.
+- Produk belum tersedia hingga Phase 06. Pemeriksaan status toko disediakan sebagai `store.Service.Approved`; semua operasi vendor dan publikasi produk harus menerapkannya di Phase 06, disertai pengujian produk sesungguhnya.
