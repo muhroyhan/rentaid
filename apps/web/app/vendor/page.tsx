@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDashboard, getSession } from "../../lib/session";
+import { VendorProducts } from "../../components/VendorProducts";
 export default async function Page() {
   const session = await getSession();
   if (!session) redirect("/masuk");
@@ -39,12 +40,13 @@ export default async function Page() {
       </div>
       <section className="surface vendor-welcome">
         <span className="status-pill approved">Toko disetujui</span>
-        <h2>Siap untuk langkah berikutnya.</h2>
-        <p>Informasi toko dan produk Anda akan dapat dikelola dari sini.</p>
+        <h2>Selamat datang di toko Anda.</h2>
+        <p>Kelola produk dan publikasi toko Anda dari sini.</p>
         <Link className="inline-link" href="/toko">
           Lihat informasi toko ↗
         </Link>
       </section>
+      <VendorProducts csrfToken={session.csrfToken ?? ""} />
     </main>
   );
 }
