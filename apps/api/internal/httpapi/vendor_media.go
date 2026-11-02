@@ -32,7 +32,7 @@ func registerVendorMedia(mux *http.ServeMux, accounts *auth.Service, cfg AuthCon
 		writeJSON(w, 201, media)
 	})
 	mux.HandleFunc("GET /api/v1/vendor/media/{id}", func(w http.ResponseWriter, r *http.Request) {
-		session, ok := requireUser(w, r, accounts, cfg)
+		session, ok := requireApprovedVendor(w, r, accounts, cfg)
 		if !ok {
 			return
 		}

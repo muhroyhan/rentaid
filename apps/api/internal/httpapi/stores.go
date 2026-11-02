@@ -32,7 +32,41 @@ func requireUser(w http.ResponseWriter, r *http.Request, accounts *auth.Service,
 	}
 	return session, true
 }
+func requireApprovedVendor(w http.ResponseWriter, r *http.Request, accounts *auth.Service, cfg AuthConfig) (auth.Session, bool) {
+	session, ok := requireUser(w, r, accounts, cfg)
+	if !ok {
+		return auth.Session{}, false
+	}
+	stores := &store.Service{Pool: accounts.Pool, Clock: accounts.Clock}
+	approved, err := stores.Approved(r.Context(), session.User.ID)
+	if err != nil {
+		errorJSON(w, 500, "internal_error", "Layanan tidak tersedia.")
+		return auth.Session{}, false
+	}
+	if !approved {
+		errorJSON(w, 403, "store_not_approved", "Toko belum disetujui atau sedang ditangguhkan.")
+		return auth.Session{}, false
+	}
+	return session, true
+}
 func registerStores(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig, stores *store.Service) {
+	mux.HandleFunc("GET /api/v1/vendor/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		session, ok := requireUser(w, r, accounts, cfg)
+		if !ok {
+			return
+		}
+		own, err := stores.Own(r.Context(), session.User.ID)
+		if errors.Is(err, store.ErrNotFound) || (err == nil && own.Status != "approved") {
+			errorJSON(w, 403, "store_not_approved", "Toko belum disetujui atau sedang ditangguhkan.")
+			return
+		}
+		if err != nil {
+			storeError(w, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, 200, own)
+	})
 	mux.HandleFunc("GET /api/v1/store", func(w http.ResponseWriter, r *http.Request) {
 		session, ok := requireUser(w, r, accounts, cfg)
 		if !ok {

@@ -2443,6 +2443,42 @@
           }
         ]
       }
+    },
+    "/api/v1/vendor/dashboard": {
+      "get": {
+        "operationId": "getVendorDashboard",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get approved vendor dashboard"
+      }
     }
   },
   "components": {
