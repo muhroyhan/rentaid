@@ -36,7 +36,8 @@
     "test:product-quote": "node scripts/test-product-quote.mjs",
     "test:checkout": "node scripts/test-checkout.mjs",
     "test:payment": "node scripts/test-payment.mjs",
-    "test:cancellation": "node scripts/test-cancellation.mjs"
+    "test:cancellation": "node scripts/test-cancellation.mjs",
+    "test:handover": "node scripts/test-handover.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
