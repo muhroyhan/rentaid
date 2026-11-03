@@ -137,7 +137,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] Gate A - admin/CMS akun, toko, kategori, produk, media, dan konten terhubung ke API Go dan PostgreSQL; uji integrasi dan browser lulus.
 - [x] 07 Pengunjung ke akun dan pengajuan vendor - Next.js, akun, profil, pengajuan dan pengajuan ulang, persetujuan, pembatasan API, SSR, serta E2E lokal dan Compose lulus.
 - [x] 08 Toko disetujui ke produk terpublikasi - daftar, formulir, foto, publikasi, arsip, moderasi, validasi, dan E2E lintas vendor melalui dev serta Compose lulus.
-- [ ] 09 Katalog publik ke detail produk
+- [x] 09 Katalog publik ke detail produk - konten CMS, pencarian, kategori, pagination, detail, status nonpublik, dan penanganan kegagalan API teruji.
 - [ ] 10 Detail produk ke penawaran harga
 - [ ] 11 Penawaran harga ke checkout dengan hold stok
 - [ ] 12 Checkout ke pembayaran mock dan order terkonfirmasi
