@@ -88,3 +88,9 @@
 
 - Filter daftar menggunakan satu status pesanan opsional dan pagination `page`/`page_size`; urutan memakai waktu pembuatan dan UUID menurun. Detail dibaca dalam transaksi read-only dengan snapshot konsisten agar pesanan, pembayaran, refund, dan riwayat berasal dari keadaan database yang sama.
 - Penyewa hanya melihat pesanan miliknya; vendor hanya melihat pesanan toko miliknya, termasuk saat toko ditangguhkan; admin melihat seluruh pesanan. Kontak penyewa hanya disertakan pada detail vendor dan admin. Aktor sistem dan admin ditampilkan dengan label peran tanpa mengekspos email.
+
+## Phase 17 - Paket demo dan pemulihan
+
+- Demo memakai Compose yang sama dengan pengembangan, dengan nama project dan port yang dapat dipilih. Gateway memiliki health check untuk API, marketplace, dan admin statis agar perintah startup menunggu seluruh jalur aplikasi siap.
+- Backup menghentikan API sementara, menyimpan dump PostgreSQL format custom serta arsip media, dan menambahkan checksum SHA-256. Restore memeriksa integritas dan menolak aplikasi target yang masih berjalan atau database/media yang sudah berisi data; tidak ada penghapusan otomatis terhadap target.
+- Pengujian demo memakai dua project Compose unik beserta port dan password acak. Alur browser membuat vendor, toko, produk bergambar, serta pesanan sampai selesai dan skenario gagal/batal/refund. Pemulihan diverifikasi lewat status pesanan, jumlah data, login, dan checksum media sebelum volume test dibersihkan.

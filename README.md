@@ -1,6 +1,8 @@
 # Rentaid — pengembangan lokal
 
-Workspace ini berisi API Go, admin React + Vite, kontrak OpenAPI, klien TypeScript, dan PostgreSQL lokal. Ruang lingkup dan urutan implementasi ada di [AGENTS.md](AGENTS.md) dan [rencana pengembangan](docs/plan.md).
+Workspace ini berisi marketplace Next.js, API Go, admin React + Vite, kontrak OpenAPI, klien TypeScript, dan PostgreSQL lokal. Ruang lingkup dan urutan implementasi ada di [AGENTS.md](AGENTS.md) dan [rencana pengembangan](docs/plan.md).
+
+Paket demo lengkap, akun, alur pengguna, dan backup/restore dijelaskan pada [panduan demo web](docs/demo.md). Jalankan `pnpm demo:up` setelah mengatur environment seed.
 
 ## Prasyarat
 
@@ -176,3 +178,9 @@ Vendor pemilik toko dapat mengonfirmasi pengembalian untuk pesanan yang sedang d
 Penyewa dapat membuka **Pesanan saya** untuk melihat daftar dan detail pesanannya. Vendor melihat pesanan tokonya, dan admin melihat seluruh pesanan. Ketiganya dapat memfilter daftar berdasarkan status dan berpindah halaman. Detail menampilkan snapshot harga, pembayaran, refund, serta riwayat status beserta aktor dan waktu dalam zona Asia/Jakarta. Nomor telepon penyewa pada detail hanya disertakan untuk vendor toko terkait dan admin.
 
 API daftar tersedia pada `GET /api/v1/orders`, `/api/v1/vendor/orders`, dan `/api/v1/admin/orders`, dengan parameter `status`, `page`, dan `page_size`. Detail masing-masing tersedia pada `/api/v1/orders/{id}/detail`, `/api/v1/vendor/orders/{id}`, dan `/api/v1/admin/orders/{id}`. Gunakan database demo terpisah dengan variabel browser seperti Phase 12, lalu jalankan `pnpm test:order-history`; test membuat akun, pesanan, pembayaran, dan refund.
+
+## Phase 17 - Paket demo web
+
+`pnpm demo:up` menjalankan seluruh aplikasi dan seed melalui Compose. `pnpm demo:down` menghentikan layanan sambil mempertahankan database dan media. Pilih project dan port melalui `RENTAID_COMPOSE_PROJECT`, `RENTAID_DB_PORT`, dan `RENTAID_HTTP_PORT`. `pnpm demo:backup <direktori-baru>` mencadangkan database serta media bersama, sedangkan `pnpm demo:restore <direktori-backup>` memulihkannya ke target kosong.
+
+Ikuti [panduan demo dan pemulihan](docs/demo.md) untuk konfigurasi, akun, dan langkah demo. `pnpm test:demo` menguji alur lengkap dari dua project Compose kosong, termasuk seed berulang, restart, serta backup/restore database dan foto produk.
