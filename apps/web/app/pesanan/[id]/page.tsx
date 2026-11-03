@@ -151,6 +151,17 @@ export default function OrderPage() {
             {order.startDate} — {order.endDate} · {order.quantity} barang
           </p>
           <strong>Total {currency.format(order.total)}</strong>
+          {order.returnedAt && (
+            <p>
+              Dikembalikan:{" "}
+              {new Intl.DateTimeFormat("id-ID", {
+                dateStyle: "long",
+                timeStyle: "short",
+                timeZone: "Asia/Jakarta",
+              }).format(new Date(order.returnedAt))}{" "}
+              WIB
+            </p>
+          )}
           {(order.refundAmount ?? 0) > 0 && (
             <p>
               Refund simulasi berhasil:{" "}

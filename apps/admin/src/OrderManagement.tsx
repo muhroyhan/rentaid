@@ -98,6 +98,17 @@ export function OrderManagement({
                 Status: {labels[item.status]} · Total{" "}
                 {currency.format(item.total)}
               </p>
+              {item.returnedAt && (
+                <p>
+                  Dikembalikan:{" "}
+                  {new Intl.DateTimeFormat("id-ID", {
+                    dateStyle: "long",
+                    timeStyle: "short",
+                    timeZone: "Asia/Jakarta",
+                  }).format(new Date(item.returnedAt))}{" "}
+                  WIB
+                </p>
+              )}{" "}
               {item.refundAmount > 0 && (
                 <p>
                   Refund simulasi berhasil: {currency.format(item.refundAmount)}
