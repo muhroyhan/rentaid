@@ -12,6 +12,7 @@ import (
 
 var ErrNotFound = errors.New("order not found")
 var ErrInvalid = errors.New("invalid expected status")
+var ErrOutsideWindow = errors.New("outside handover window")
 
 type Conflict struct{ Status string }
 
@@ -104,4 +105,61 @@ func (s *Service) ExpireDue(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	return tag.RowsAffected(), nil
+}
+
+// Handover allows only the owning vendor to mark a confirmed order as renting.
+func (s *Service) Handover(ctx context.Context, id, actor string) (string, error) {
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var state string
+	var start, end time.Time
+	err = tx.QueryRow(ctx, `SELECT o.status,o.start_date,o.end_date FROM orders o JOIN products p ON p.id=o.product_id JOIN stores st ON st.id=p.store_id WHERE o.id=$1 AND st.owner_id=$2 FOR UPDATE OF o`, id, actor).Scan(&state, &start, &end)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", err
+	}
+	if state == "renting" {
+		return state, nil
+	}
+	if state == "completed" {
+		var handed bool
+		err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM order_status_history WHERE order_id=$1 AND from_status='confirmed' AND to_status='renting')`, id).Scan(&handed)
+		if err != nil {
+			return "", err
+		}
+		if handed {
+			return state, nil
+		}
+	}
+	if state != "confirmed" {
+		return "", &Conflict{Status: state}
+	}
+	now := s.Clock.Now().UTC()
+	loc, err := clock.Jakarta()
+	if err != nil {
+		return "", err
+	}
+	today := now.In(loc).Format("2006-01-02")
+	if today < start.Format("2006-01-02") || today > end.Format("2006-01-02") {
+		return "", ErrOutsideWindow
+	}
+	tag, err := tx.Exec(ctx, `UPDATE orders SET status='renting' WHERE id=$1 AND status='confirmed'`, id)
+	if err != nil {
+		return "", err
+	}
+	if tag.RowsAffected() != 1 {
+		return "", errors.New("order changed while locked")
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,actor_id,created_at) VALUES($1,'confirmed','renting',$2,$3)`, id, actor, now); err != nil {
+		return "", err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return "", err
+	}
+	return "renting", nil
 }
