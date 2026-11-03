@@ -130,3 +130,9 @@ Beranda menampilkan konten `home` yang diterbitkan melalui CMS dan pilihan produ
 API `GET /api/v1/products` menerima `q`, `category_id`, `page`, dan `page_size`. Pencarian nama dan deskripsi tidak membedakan huruf besar/kecil dan memperlakukan karakter pencarian sebagai teks biasa. Data publik diambil tanpa cache agar publikasi CMS dan moderasi produk segera terlihat.
 
 Jalankan `pnpm test:public-catalog` dengan variabel browser dan database test terpisah seperti Phase 08. Test membuat produk dan mengubah konten beranda serta status moderasi, sehingga tidak boleh diarahkan ke data pengguna. `pnpm test:catalog-errors` memeriksa penanganan kegagalan API tanpa database.
+
+## Phase 10 - Penawaran harga
+
+Pada detail produk, pengunjung dapat memilih tanggal mulai, tanggal selesai, dan jumlah barang untuk melihat penawaran. Server menghitung hari secara inklusif, maksimal 30 hari, dengan tanggal hari ini menggunakan zona Asia/Jakarta. Total adalah harga harian dikali jumlah hari dan barang. Penawaran memeriksa ketersediaan setiap tanggal, termasuk pesanan aktif dan hold yang belum kedaluwarsa, tetapi tidak menyimpan pesanan atau menahan stok. Checkout dan validasi ulang penawaran dilakukan pada Phase 11.
+
+API `GET /api/v1/products/{id}/quote` menerima parameter `start_date`, `end_date` (format `YYYY-MM-DD`), dan `quantity`. Respons memuat durasi, harga harian, jumlah tersedia, dan total; stok yang tidak cukup menghasilkan 409 `stock_unavailable`. Gunakan database demo terpisah yang sudah diberi seed dan tetapkan `E2E_WEB_URL` serta `CHROME_PATH`, lalu jalankan `pnpm test:product-quote` untuk menguji formulir melalui browser.
