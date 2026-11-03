@@ -78,3 +78,8 @@
 
 - Serah terima mengunci baris pesanan yang sama dengan pembatalan, memeriksa kepemilikan toko serta tanggal inklusif memakai `Clock` dan Asia/Jakarta, lalu mencatat aktor dalam riwayat. Toko yang ditangguhkan tetap dapat memproses pesanan yang sudah ada.
 - Pengulangan saat pesanan `renting` mengembalikan status saat ini tanpa riwayat tambahan. Setelah pesanan selesai, pengulangan juga mengembalikan status saat ini bila riwayat menunjukkan serah terima sudah terjadi.
+
+## Phase 15 - Pengembalian barang
+
+- Konfirmasi vendor mengunci pesanan dan menyimpan `returned_at`, perubahan status, serta riwayat dalam satu transaksi. Pengulangan mengembalikan waktu tersimpan; pengembalian terlambat tidak mengubah snapshot harga atau menambah denda.
+- Pesanan `completed` tetap dihitung dalam penawaran, checkout, dan pembatasan pengurangan stok selama rentang tanggal sewanya. Dengan demikian pengembalian awal tidak membebaskan stok sebelum tanggal akhir. `returnedAt` pada respons detail bersifat opsional agar respons idempotensi lama tetap berlaku.
