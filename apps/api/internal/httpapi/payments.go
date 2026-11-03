@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"rentaid.local/api/internal/auth"
+	"rentaid.local/api/internal/order"
 	"rentaid.local/api/internal/payment"
 )
 
@@ -87,11 +88,11 @@ func registerPayments(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 			return
 		}
 		page, size, ok := productPagination(r)
-		if !ok {
+		if !ok || !order.ValidStatus(r.URL.Query().Get("status")) {
 			errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
 			return
 		}
-		items, err := svc.VendorOrders(r.Context(), session.User.ID, page, size)
+		items, err := svc.VendorOrders(r.Context(), session.User.ID, r.URL.Query().Get("status"), page, size)
 		if err != nil {
 			errorJSON(w, 500, "internal_error", "Layanan tidak tersedia.")
 			return

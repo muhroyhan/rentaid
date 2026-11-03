@@ -118,11 +118,11 @@ func TestPaymentsIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT count(*) FROM payments WHERE order_id=$1`, order).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("payment count=%d %v", count, err)
 	}
-	items, err := svc.VendorOrders(ctx, owner, 1, 20)
+	items, err := svc.VendorOrders(ctx, owner, "", 1, 20)
 	if err != nil || len(items) != 1 || items[0].RenterPhone != "0812" {
 		t.Fatalf("vendor: %+v %v", items, err)
 	}
-	otherItems, err := svc.VendorOrders(ctx, other, 1, 20)
+	otherItems, err := svc.VendorOrders(ctx, other, "", 1, 20)
 	if err != nil || len(otherItems) != 0 {
 		t.Fatalf("vendor isolation: %+v %v", otherItems, err)
 	}

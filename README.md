@@ -170,3 +170,9 @@ Vendor pemilik toko dapat mengonfirmasi serah terima pesanan yang sudah terbayar
 Vendor pemilik toko dapat mengonfirmasi pengembalian untuk pesanan yang sedang disewa. Pesanan menjadi selesai, dan waktu pengembalian serta aktor tercatat. Pengembalian terlambat tetap dapat dikonfirmasi tanpa denda. Jika barang dikembalikan lebih awal, stok tetap terpakai sampai tanggal akhir sewa secara inklusif.
 
 `POST /api/v1/vendor/orders/{id}/return` memerlukan sesi vendor pemilik toko dan CSRF untuk browser. Pengulangan setelah berhasil mengembalikan waktu pengembalian yang sama tanpa menambah riwayat. Gunakan database demo terpisah dengan simulator aktif dan variabel browser seperti Phase 12, lalu jalankan `pnpm test:return`; test membuat akun dan pesanan serta memakai stok produk demo.
+
+## Phase 16 - Riwayat pesanan lintas peran
+
+Penyewa dapat membuka **Pesanan saya** untuk melihat daftar dan detail pesanannya. Vendor melihat pesanan tokonya, dan admin melihat seluruh pesanan. Ketiganya dapat memfilter daftar berdasarkan status dan berpindah halaman. Detail menampilkan snapshot harga, pembayaran, refund, serta riwayat status beserta aktor dan waktu dalam zona Asia/Jakarta. Nomor telepon penyewa pada detail hanya disertakan untuk vendor toko terkait dan admin.
+
+API daftar tersedia pada `GET /api/v1/orders`, `/api/v1/vendor/orders`, dan `/api/v1/admin/orders`, dengan parameter `status`, `page`, dan `page_size`. Detail masing-masing tersedia pada `/api/v1/orders/{id}/detail`, `/api/v1/vendor/orders/{id}`, dan `/api/v1/admin/orders/{id}`. Gunakan database demo terpisah dengan variabel browser seperti Phase 12, lalu jalankan `pnpm test:order-history`; test membuat akun, pesanan, pembayaran, dan refund.

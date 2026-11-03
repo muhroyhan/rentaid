@@ -31,6 +31,7 @@ export default async function RootLayout({
               <Link href="/">Beranda</Link>
               <Link href="/katalog">Katalog</Link>
               <Link href="/toko">Buka toko</Link>
+              {session && <Link href="/pesanan">Pesanan saya</Link>}
               {session && <Link href="/akun">Akun saya</Link>}
             </nav>
             <div className="header-actions">

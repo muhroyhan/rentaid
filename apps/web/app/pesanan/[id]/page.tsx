@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import type { components } from "@rentaid/api-client";
 import { api } from "../../../lib/api";
 import { CancelOrderButton } from "../../../components/CancelOrderButton";
+import { OrderHistoryDetails } from "../../../components/OrderHistoryDetails";
 type Order = components["schemas"]["Order"];
 type Outcome = components["schemas"]["PaymentInput"]["outcome"];
 const currency = new Intl.NumberFormat("id-ID", {
@@ -162,12 +163,7 @@ export default function OrderPage() {
               WIB
             </p>
           )}
-          {(order.refundAmount ?? 0) > 0 && (
-            <p>
-              Refund simulasi berhasil:{" "}
-              {currency.format(order.refundAmount ?? 0)}
-            </p>
-          )}
+
           {(order.status === "pending_payment" ||
             order.status === "confirmed") && (
             <div className="payment-simulator">
@@ -183,6 +179,11 @@ export default function OrderPage() {
               />
             </div>
           )}
+          <OrderHistoryDetails
+            key={`${order.id}:${order.status}`}
+            id={order.id}
+            scope="renter"
+          />
           {notice && <p role="status">{notice}</p>}
           {order.status === "pending_payment" && (
             <div className="payment-simulator">

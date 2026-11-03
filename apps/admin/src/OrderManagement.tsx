@@ -1,5 +1,6 @@
 import { createApiClient, type components } from "@rentaid/api-client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { OrderDetails } from "./OrderDetails";
 const api = createApiClient(window.location.origin);
 type Order = components["schemas"]["VendorOrder"];
 const labels: Record<Order["status"], string> = {
@@ -25,13 +26,22 @@ export function OrderManagement({
 }) {
   const [items, setItems] = useState<Order[]>([]);
   const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<Order["status"] | "">("");
+  const [selected, setSelected] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const requestVersion = useRef(0);
+  const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
+    const version = ++requestVersion.current;
+    setLoading(true);
     try {
       const result = await api.GET("/api/v1/admin/orders", {
-        params: { query: { page, page_size: 20 } },
+        params: {
+          query: { page, page_size: 20, ...(status ? { status } : {}) },
+        },
       });
+      if (version !== requestVersion.current) return;
       if (result.response.status === 401) {
         onExpired();
         return;
@@ -39,11 +49,19 @@ export function OrderManagement({
       if (!result.data) throw new Error();
       setItems(result.data);
     } catch {
-      setError("Daftar pesanan tidak dapat dimuat.");
+      if (version === requestVersion.current) {
+        setItems([]);
+        setError("Daftar pesanan tidak dapat dimuat.");
+      }
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
     }
-  }, [page, onExpired]);
+  }, [page, status, onExpired]);
   useEffect(() => {
     void load();
+    return () => {
+      requestVersion.current++;
+    };
   }, [load]);
   async function cancel(item: Order) {
     if (item.status !== "confirmed" && item.status !== "pending_payment")
@@ -76,12 +94,31 @@ export function OrderManagement({
         Kelola pesanan sebelum serah terima. Pembatalan pesanan terkonfirmasi
         menghasilkan refund simulasi penuh.
       </p>
+      <label htmlFor="admin-order-filter">Status pesanan</label>{" "}
+      <select
+        id="admin-order-filter"
+        value={status}
+        onChange={(e) => {
+          setStatus(e.target.value as Order["status"] | "");
+          setPage(1);
+          setSelected("");
+        }}
+      >
+        <option value="">Semua status</option>
+        {(Object.keys(labels) as Order["status"][]).map((s) => (
+          <option key={s} value={s}>
+            {labels[s]}
+          </option>
+        ))}
+      </select>{" "}
       {error && (
         <div className="alert" role="alert">
           {error}
         </div>
       )}
-      {items.length === 0 ? (
+      {loading ? (
+        <p>Memuat pesanan...</p>
+      ) : error && items.length === 0 ? null : items.length === 0 ? (
         <p>Belum ada pesanan pada halaman ini.</p>
       ) : (
         <ul>
@@ -98,6 +135,19 @@ export function OrderManagement({
                 Status: {labels[item.status]} · Total{" "}
                 {currency.format(item.total)}
               </p>
+              <button
+                className="outline"
+                onClick={() => setSelected(selected === item.id ? "" : item.id)}
+              >
+                {selected === item.id ? "Tutup detail" : "Lihat detail"}
+              </button>
+              {selected === item.id && (
+                <OrderDetails
+                  key={`${item.id}:${item.status}`}
+                  id={item.id}
+                  onExpired={onExpired}
+                />
+              )}{" "}
               {item.returnedAt && (
                 <p>
                   Dikembalikan:{" "}
@@ -131,7 +181,7 @@ export function OrderManagement({
       <div>
         <button
           className="outline"
-          disabled={page === 1}
+          disabled={loading || page === 1}
           onClick={() => setPage(page - 1)}
         >
           Sebelumnya
@@ -139,7 +189,7 @@ export function OrderManagement({
         Halaman {page}{" "}
         <button
           className="outline"
-          disabled={items.length < 20}
+          disabled={loading || items.length < 20}
           onClick={() => setPage(page + 1)}
         >
           Berikutnya
