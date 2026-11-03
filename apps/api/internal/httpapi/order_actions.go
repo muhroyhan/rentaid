@@ -111,7 +111,11 @@ func registerOrderActions(mux *http.ServeMux, accounts *auth.Service, cfg AuthCo
 			errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
 			return
 		}
-		items, err := views.AdminOrders(r.Context(), page, size)
+		if !order.ValidStatus(r.URL.Query().Get("status")) {
+			errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
+			return
+		}
+		items, err := views.AdminOrders(r.Context(), r.URL.Query().Get("status"), page, size)
 		if err != nil {
 			errorJSON(w, 500, "internal_error", "Layanan tidak tersedia.")
 			return

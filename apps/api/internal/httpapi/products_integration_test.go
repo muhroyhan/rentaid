@@ -333,6 +333,59 @@ func TestProductsIntegration(t *testing.T) {
 	if response := call("GET", "/api/v1/admin/orders", token, nil); response.Code != 403 {
 		t.Fatalf("admin order authorization: %d %s", response.Code, response.Body)
 	}
+	renterDetail := call("GET", "/api/v1/orders/"+checkoutOrder.ID+"/detail", otherToken, nil)
+	if renterDetail.Code != 200 || !strings.Contains(renterDetail.Body.String(), `"payment"`) || !strings.Contains(renterDetail.Body.String(), `"refund"`) || !strings.Contains(renterDetail.Body.String(), `"toStatus":"cancelled"`) || strings.Contains(renterDetail.Body.String(), `"renterPhone"`) {
+		t.Fatalf("renter detail: %d %s", renterDetail.Code, renterDetail.Body)
+	}
+	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID+"/detail", token, nil); response.Code != 404 {
+		t.Fatalf("other renter detail: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/vendor/orders/"+checkoutOrder.ID, token, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"renterPhone":"081234"`) {
+		t.Fatalf("vendor detail: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/vendor/orders/"+checkoutOrder.ID, otherToken, nil); response.Code != 404 {
+		t.Fatalf("other vendor detail: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/orders/"+checkoutOrder.ID, admin, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"refund"`) {
+		t.Fatalf("admin detail: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/orders/"+checkoutOrder.ID, otherToken, nil); response.Code != 403 {
+		t.Fatalf("admin detail authorization: %d %s", response.Code, response.Body)
+	}
+	for _, path := range []string{"/api/v1/orders?status=cancelled", "/api/v1/vendor/orders?status=cancelled", "/api/v1/admin/orders?status=cancelled"} {
+		user := otherToken
+		if strings.Contains(path, "/vendor/") {
+			user = token
+		}
+		if strings.Contains(path, "/admin/") {
+			user = admin
+		}
+		response := call("GET", path, user, nil)
+		if response.Code != 200 || !strings.Contains(response.Body.String(), checkoutOrder.ID) || strings.Contains(response.Body.String(), handoverID) {
+			t.Fatalf("filter %s: %d %s", path, response.Code, response.Body)
+		}
+	}
+	first := call("GET", "/api/v1/orders?page=1&page_size=1", otherToken, nil)
+	secondPage := call("GET", "/api/v1/orders?page=2&page_size=1", otherToken, nil)
+	var one, two []map[string]any
+	if first.Code != 200 || secondPage.Code != 200 || json.Unmarshal(first.Body.Bytes(), &one) != nil || json.Unmarshal(secondPage.Body.Bytes(), &two) != nil || len(one) != 1 || len(two) != 1 || one[0]["id"] == two[0]["id"] {
+		t.Fatalf("order pagination: %s %s", first.Body, secondPage.Body)
+	}
+	for _, listing := range []struct{ path, token string }{{"/api/v1/vendor/orders", token}, {"/api/v1/admin/orders", admin}} {
+		onePage := call("GET", listing.path+"?page=1&page_size=1", listing.token, nil)
+		twoPage := call("GET", listing.path+"?page=2&page_size=1", listing.token, nil)
+		again := call("GET", listing.path+"?page=1&page_size=1", listing.token, nil)
+		var a, b []map[string]any
+		if onePage.Code != 200 || twoPage.Code != 200 || json.Unmarshal(onePage.Body.Bytes(), &a) != nil || json.Unmarshal(twoPage.Body.Bytes(), &b) != nil || len(a) != 1 || len(b) != 1 || a[0]["id"] == b[0]["id"] || onePage.Body.String() != again.Body.String() {
+			t.Fatalf("%s pagination: %s %s", listing.path, onePage.Body, twoPage.Body)
+		}
+		if invalid := call("GET", listing.path+"?status=invalid", listing.token, nil); invalid.Code != 400 {
+			t.Fatalf("%s invalid filter: %d", listing.path, invalid.Code)
+		}
+	}
+	if response := call("GET", "/api/v1/orders?status=invalid", otherToken, nil); response.Code != 400 {
+		t.Fatalf("invalid order filter: %d %s", response.Code, response.Body)
+	}
 	if rec = call("GET", "/api/v1/media/"+photo.ID, "", nil); rec.Code != 200 {
 		t.Fatalf("published photo: %d", rec.Code)
 	}
