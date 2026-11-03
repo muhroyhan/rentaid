@@ -2564,6 +2564,134 @@
           }
         }
       }
+    },
+    "/api/v1/checkout": {
+      "post": {
+        "operationId": "checkout",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created or replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Quote changed or key reused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/QuoteChanged"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{id}": {
+      "get": {
+        "operationId": "getOrder",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order for its owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3229,6 +3357,147 @@
             "type": "integer",
             "format": "int64",
             "minimum": 1
+          }
+        }
+      },
+      "CheckoutInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productId",
+          "startDate",
+          "endDate",
+          "quantity",
+          "expectedTotal",
+          "expectedAvailable"
+        ],
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expectedTotal": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "expectedAvailable": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "orderCode",
+          "productId",
+          "productName",
+          "storeName",
+          "storeAddress",
+          "startDate",
+          "endDate",
+          "quantity",
+          "dailyPrice",
+          "total",
+          "status",
+          "holdUntil",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderCode": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "storeName": {
+            "type": "string"
+          },
+          "storeAddress": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dailyPrice": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_payment",
+              "confirmed",
+              "renting",
+              "completed",
+              "cancelled",
+              "expired",
+              "payment_failed"
+            ]
+          },
+          "holdUntil": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "QuoteChanged": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "quote"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["quote_changed"]
+          },
+          "message": {
+            "type": "string"
+          },
+          "quote": {
+            "$ref": "#/components/schemas/Quote"
           }
         }
       }

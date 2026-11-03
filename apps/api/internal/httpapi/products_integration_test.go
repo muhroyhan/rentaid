@@ -169,6 +169,48 @@ func TestProductsIntegration(t *testing.T) {
 	if rec = call("GET", "/api/v1/products/"+p.ID+"/quote?start_date=2026-11-04&end_date=2026-11-05&quantity=3", "", nil); rec.Code != 400 {
 		t.Fatalf("excess quantity: %d %s", rec.Code, rec.Body)
 	}
+	if _, err = pool.Exec(ctx, `UPDATE users SET phone='081234' WHERE id=$1`, other.ID); err != nil {
+		t.Fatal(err)
+	}
+	checkoutCall := func(key string, expected int64) *httptest.ResponseRecorder {
+		t.Helper()
+		data, e := json.Marshal(map[string]any{"productId": p.ID, "startDate": "2026-11-04", "endDate": "2026-11-05", "quantity": 1, "expectedTotal": expected, "expectedAvailable": 2})
+		if e != nil {
+			t.Fatal(e)
+		}
+		req := httptest.NewRequest("POST", "/api/v1/checkout", bytes.NewReader(data))
+		req.Header.Set("Authorization", "Bearer "+otherToken)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Idempotency-Key", key)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, req)
+		return recorder
+	}
+	if response := checkoutCall("changed", 1); response.Code != 409 || !strings.Contains(response.Body.String(), `"quote_changed"`) {
+		t.Fatalf("changed checkout: %d %s", response.Code, response.Body)
+	}
+	created := checkoutCall("successful", 200000)
+	if created.Code != 201 {
+		t.Fatalf("checkout: %d %s", created.Code, created.Body)
+	}
+	var checkoutOrder struct {
+		ID string `json:"id"`
+	}
+	if err = json.Unmarshal(created.Body.Bytes(), &checkoutOrder); err != nil {
+		t.Fatal(err)
+	}
+	if response := checkoutCall("successful", 200000); response.Code != 201 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
+		t.Fatalf("replay: %d %s", response.Code, response.Body)
+	}
+	if response := checkoutCall("successful", 100000); response.Code != 409 || !strings.Contains(response.Body.String(), `"idempotency_key_reuse"`) {
+		t.Fatalf("reuse: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, otherToken, nil); response.Code != 200 {
+		t.Fatalf("order: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, token, nil); response.Code != 404 {
+		t.Fatalf("other order: %d %s", response.Code, response.Body)
+	}
 	if rec = call("GET", "/api/v1/media/"+photo.ID, "", nil); rec.Code != 200 {
 		t.Fatalf("published photo: %d", rec.Code)
 	}

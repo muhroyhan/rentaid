@@ -17,6 +17,7 @@ import (
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"rentaid.local/api/internal/auth"
 	"rentaid.local/api/internal/category"
+	"rentaid.local/api/internal/checkout"
 	"rentaid.local/api/internal/content"
 	"rentaid.local/api/internal/product"
 	"rentaid.local/api/internal/quote"
@@ -81,6 +82,7 @@ func NewWithContent(db Pinger, logger *slog.Logger, svc *auth.Service, cfg AuthC
 		registerStores(mux, svc, cfg, &store.Service{Pool: svc.Pool, Clock: svc.Clock})
 		registerProducts(mux, svc, cfg, &product.Service{Pool: svc.Pool, Clock: svc.Clock})
 		registerQuotes(mux, &quote.Service{Pool: svc.Pool, Clock: svc.Clock})
+		registerCheckout(mux, svc, cfg, &checkout.Service{Pool: svc.Pool, Clock: svc.Clock})
 		if pages != nil {
 			registerContent(mux, svc, cfg, pages)
 			registerVendorMedia(mux, svc, cfg, pages)
