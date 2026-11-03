@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { productDetail } from "../../../lib/catalog";
+import { QuoteForm } from "../../../components/QuoteForm";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const currency = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -71,6 +72,7 @@ export default async function ProductPage({
               ? `Stok tersedia: ${product.stock}`
               : "Stok sedang tidak tersedia"}
           </p>
+          <QuoteForm productId={product.id} stock={product.stock} />
           <div className="detail-section">
             <span className="eyebrow">TENTANG PRODUK</span>
             <h2>Deskripsi</h2>
