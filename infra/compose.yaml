@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: rentaid
       POSTGRES_PASSWORD: rentaid_local
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${RENTAID_DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -27,7 +27,7 @@ services:
       PAYMENT_SIMULATOR_ENABLED: "true"
       MEDIA_DIR: /var/lib/rentaid/media
       DATABASE_URL: postgres://rentaid:rentaid_local@postgres:5432/rentaid?sslmode=disable
-      ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081
+      ALLOWED_ORIGINS: http://localhost:${RENTAID_HTTP_PORT:-8081},http://127.0.0.1:${RENTAID_HTTP_PORT:-8081}
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,7 +76,16 @@ services:
       context: ..
       dockerfile: apps/admin/Dockerfile
     ports:
-      - "127.0.0.1:8081:80"
+      - "127.0.0.1:${RENTAID_HTTP_PORT:-8081}:80"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://127.0.0.1/api/v1/ready && wget -q -O /dev/null http://127.0.0.1/admin/ && wget -q -O /dev/null http://127.0.0.1/",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     depends_on:
       api:
         condition: service_healthy

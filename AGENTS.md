@@ -145,8 +145,8 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 14 Order terkonfirmasi ke barang diserahkan - otorisasi vendor, tanggal Jakarta, audit, idempotensi, konflik pembatalan, privasi kontak, dan uji PostgreSQL/browser lulus.
 - [x] 15 Barang disewa ke pengembalian dan order selesai - konfirmasi vendor, waktu dan riwayat idempoten, pengembalian terlambat, stok tanggal akhir, dan uji PostgreSQL/browser lulus.
 - [x] 16 Riwayat dan detail pesanan lintas peran - detail pembayaran/refund dan riwayat aktor, filter status, pagination, otorisasi, serta uji PostgreSQL/browser lulus.
-- [ ] 17 Paket demo web yang dapat diulang
-- [ ] Gate B
+- [x] 17 Paket demo web yang dapat diulang - Compose sehat, seed berulang, alur lengkap, gagal/batal/refund, restart, dan backup/restore database/media pada project kosong teruji.
+- [x] Gate B - marketplace web, vendor, dan admin menyelesaikan alur MVP melalui satu origin Compose; paket demo dan pemulihan teruji tanpa layanan eksternal saat runtime.
 - [ ] 18 Toolchain Android ke aplikasi terhubung API
 - [ ] 19 Pengguna Android ke sesi dan profil
 - [ ] 20 Katalog Android ke detail produk
@@ -184,4 +184,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:handover`: uji serah terima vendor dan status penyewa/admin melalui browser pada database demo terpisah.
 - `pnpm test:return`: uji pengembalian vendor, status penyewa/admin, dan stok inklusif melalui browser pada database demo terpisah.
 - `pnpm test:order-history`: uji riwayat dan filter pesanan lintas peran melalui browser pada database demo terpisah.
+- `pnpm demo:up` / `pnpm demo:down` / `pnpm demo:seed`: jalankan paket demo Compose, hentikan tanpa menghapus volume, atau ulangi seed dari environment.
+- `pnpm demo:backup <direktori-baru>` / `pnpm demo:restore <direktori-backup>`: backup database/media bersama atau restore ke project target kosong; lihat `docs/demo.md`.
+- `pnpm test:demo`: uji alur lengkap, seed, restart, dan backup/restore pada dua project Compose sementara yang dibersihkan setelah pengujian.
 - Build Android belum tersedia; tambahkan perintah saat phase terkait selesai.
