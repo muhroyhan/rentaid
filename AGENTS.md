@@ -144,7 +144,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 13 Pesanan belum diserahkan ke pembatalan dan refund - pembersihan hold, pembatalan lintas peran, refund idempoten, konkurensi, restart, dan uji PostgreSQL/browser lulus.
 - [x] 14 Order terkonfirmasi ke barang diserahkan - otorisasi vendor, tanggal Jakarta, audit, idempotensi, konflik pembatalan, privasi kontak, dan uji PostgreSQL/browser lulus.
 - [x] 15 Barang disewa ke pengembalian dan order selesai - konfirmasi vendor, waktu dan riwayat idempoten, pengembalian terlambat, stok tanggal akhir, dan uji PostgreSQL/browser lulus.
-- [ ] 16 Riwayat dan detail pesanan lintas peran
+- [x] 16 Riwayat dan detail pesanan lintas peran - detail pembayaran/refund dan riwayat aktor, filter status, pagination, otorisasi, serta uji PostgreSQL/browser lulus.
 - [ ] 17 Paket demo web yang dapat diulang
 - [ ] Gate B
 - [ ] 18 Toolchain Android ke aplikasi terhubung API
@@ -183,4 +183,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:cancellation`: uji pembatalan penyewa, vendor, admin, dan hasil refund melalui browser pada database demo terpisah.
 - `pnpm test:handover`: uji serah terima vendor dan status penyewa/admin melalui browser pada database demo terpisah.
 - `pnpm test:return`: uji pengembalian vendor, status penyewa/admin, dan stok inklusif melalui browser pada database demo terpisah.
+- `pnpm test:order-history`: uji riwayat dan filter pesanan lintas peran melalui browser pada database demo terpisah.
 - Build Android belum tersedia; tambahkan perintah saat phase terkait selesai.

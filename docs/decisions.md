@@ -83,3 +83,8 @@
 
 - Konfirmasi vendor mengunci pesanan dan menyimpan `returned_at`, perubahan status, serta riwayat dalam satu transaksi. Pengulangan mengembalikan waktu tersimpan; pengembalian terlambat tidak mengubah snapshot harga atau menambah denda.
 - Pesanan `completed` tetap dihitung dalam penawaran, checkout, dan pembatasan pengurangan stok selama rentang tanggal sewanya. Dengan demikian pengembalian awal tidak membebaskan stok sebelum tanggal akhir. `returnedAt` pada respons detail bersifat opsional agar respons idempotensi lama tetap berlaku.
+
+## Phase 16 - Riwayat pesanan
+
+- Filter daftar menggunakan satu status pesanan opsional dan pagination `page`/`page_size`; urutan memakai waktu pembuatan dan UUID menurun. Detail dibaca dalam transaksi read-only dengan snapshot konsisten agar pesanan, pembayaran, refund, dan riwayat berasal dari keadaan database yang sama.
+- Penyewa hanya melihat pesanan miliknya; vendor hanya melihat pesanan toko miliknya, termasuk saat toko ditangguhkan; admin melihat seluruh pesanan. Kontak penyewa hanya disertakan pada detail vendor dan admin. Aktor sistem dan admin ditampilkan dengan label peran tanpa mengekspos email.
