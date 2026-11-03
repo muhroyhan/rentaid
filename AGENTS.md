@@ -138,7 +138,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 07 Pengunjung ke akun dan pengajuan vendor - Next.js, akun, profil, pengajuan dan pengajuan ulang, persetujuan, pembatasan API, SSR, serta E2E lokal dan Compose lulus.
 - [x] 08 Toko disetujui ke produk terpublikasi - daftar, formulir, foto, publikasi, arsip, moderasi, validasi, dan E2E lintas vendor melalui dev serta Compose lulus.
 - [x] 09 Katalog publik ke detail produk - konten CMS, pencarian, kategori, pagination, detail, status nonpublik, dan penanganan kegagalan API teruji.
-- [ ] 10 Detail produk ke penawaran harga
+- [x] 10 Detail produk ke penawaran harga - tanggal inklusif, ketersediaan per tanggal dan hold, kontrak API, ringkasan web, integrasi PostgreSQL, dan browser teruji tanpa menahan stok.
 - [ ] 11 Penawaran harga ke checkout dengan hold stok
 - [ ] 12 Checkout ke pembayaran mock dan order terkonfirmasi
 - [ ] 13 Pesanan belum diserahkan ke pembatalan dan refund
@@ -177,4 +177,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm web:dev` / `pnpm web:build`: jalankan / build marketplace Next.js.
 - `pnpm test:marketplace-account`: uji alur akun, pengajuan toko, persetujuan, dan dashboard vendor melalui browser pada database terpisah.
 - `pnpm test:vendor-products`: uji produk, foto, publikasi, moderasi, arsip, dan kepemilikan melalui browser pada database demo terpisah.
+- `pnpm test:product-quote`: uji formulir dan ringkasan penawaran di browser dengan database demo terpisah.
 - Build Android belum tersedia; tambahkan perintah saat phase terkait selesai.

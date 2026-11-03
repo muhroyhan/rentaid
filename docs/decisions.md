@@ -51,3 +51,8 @@
 - Pencarian produk publik mencocokkan teks literal tanpa membedakan huruf besar/kecil pada nama dan deskripsi; filter kategori memakai UUID. Pengurutan tetap berdasarkan waktu pembuatan dan UUID agar pagination deterministik.
 - Katalog menampilkan 12 produk per halaman dan memeriksa halaman berikutnya untuk menentukan navigasi. Alamat toko disertakan pada respons produk sebagai informasi pengambilan.
 - Konten CMS dan produk publik dibaca tanpa cache; prefetch tautan produk dinonaktifkan agar detail memeriksa kembali status publik saat pengunjung membukanya.
+
+## Phase 10 - Penawaran harga
+
+- Penawaran bersifat baca saja melalui GET agar dapat dilihat pengunjung tanpa sesi dan tidak menahan stok. Ketersediaan adalah stok dikurangi pemakaian puncak pada setiap tanggal inklusif; hold dengan waktu berakhir sama dengan waktu pemeriksaan dianggap kedaluwarsa.
+- Skema pesanan minimal menyimpan produk, tanggal, kuantitas, status, dan waktu hold. Checkout, pemilik, snapshot harga, serta penguncian stok ditambahkan pada Phase 11. Total dibatasi pada integer aman JavaScript agar nilai rupiah yang diterima web tidak kehilangan presisi.

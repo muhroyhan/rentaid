@@ -159,6 +159,16 @@ func TestProductsIntegration(t *testing.T) {
 	if rec = call("PUT", "/api/v1/vendor/products/"+p.ID+"/publication", token, map[string]bool{"value": true}); rec.Code != 200 {
 		t.Fatalf("publish: %d %s", rec.Code, rec.Body)
 	}
+	quotePath := "/api/v1/products/" + p.ID + "/quote?start_date=2026-11-04&end_date=2026-11-05&quantity=2"
+	if rec = call("GET", quotePath, "", nil); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"days":2`) || !strings.Contains(rec.Body.String(), `"total":400000`) {
+		t.Fatalf("quote: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products/"+p.ID+"/quote?start_date=2026-11-05&end_date=2026-11-04&quantity=1", "", nil); rec.Code != 400 {
+		t.Fatalf("invalid quote: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products/"+p.ID+"/quote?start_date=2026-11-04&end_date=2026-11-05&quantity=3", "", nil); rec.Code != 400 {
+		t.Fatalf("excess quantity: %d %s", rec.Code, rec.Body)
+	}
 	if rec = call("GET", "/api/v1/media/"+photo.ID, "", nil); rec.Code != 200 {
 		t.Fatalf("published photo: %d", rec.Code)
 	}
