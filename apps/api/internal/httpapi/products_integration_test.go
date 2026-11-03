@@ -259,8 +259,40 @@ func TestProductsIntegration(t *testing.T) {
 	if response := call("GET", "/api/v1/vendor/orders", token, nil); response.Code != 200 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
 		t.Fatalf("vendor orders: %d %s", response.Code, response.Body)
 	}
-	if response := call("GET", "/api/v1/vendor/orders", otherToken, nil); response.Code != 200 || strings.Contains(response.Body.String(), checkoutOrder.ID) {
+	if response := call("GET", "/api/v1/vendor/orders", otherToken, nil); response.Code != 200 || strings.Contains(response.Body.String(), checkoutOrder.ID) || strings.Contains(response.Body.String(), "081234") || strings.Contains(response.Body.String(), "Other") {
 		t.Fatalf("other vendor orders: %d %s", response.Code, response.Body)
+	}
+	var handoverID string
+	if err = pool.QueryRow(ctx, `INSERT INTO orders(product_id,user_id,order_code,product_name,store_name,store_address,start_date,end_date,quantity,daily_price,total,status,hold_until,created_at) SELECT product_id,user_id,'RNT-HANDOVER',product_name,store_name,store_address,start_date,end_date,quantity,daily_price,total,'confirmed',hold_until,created_at FROM orders WHERE id=$1 RETURNING id::text`, checkoutOrder.ID).Scan(&handoverID); err != nil {
+		t.Fatal(err)
+	}
+	handoverPath := "/api/v1/vendor/orders/" + handoverID + "/handover"
+	if response := call("POST", handoverPath, token, nil); response.Code != 409 {
+		t.Fatalf("early handover: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", handoverPath, otherToken, nil); response.Code != 404 {
+		t.Fatalf("unrelated vendor handover: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", handoverPath, admin, nil); response.Code != 403 {
+		t.Fatalf("admin handover: %d %s", response.Code, response.Body)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE orders SET start_date='2026-11-01',end_date='2026-11-01' WHERE id=$1`, handoverID); err != nil {
+		t.Fatal(err)
+	}
+	if response := call("POST", handoverPath, token, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"status":"renting"`) {
+		t.Fatalf("handover: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", handoverPath, token, nil); response.Code != 200 {
+		t.Fatalf("handover retry: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/orders/"+handoverID, otherToken, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"status":"renting"`) {
+		t.Fatalf("renter handover status: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/orders", admin, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"status":"renting"`) {
+		t.Fatalf("admin handover status: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", "/api/v1/orders/"+handoverID+"/cancel", otherToken, map[string]string{"expectedStatus": "confirmed"}); response.Code != 409 || !strings.Contains(response.Body.String(), `"currentStatus":"renting"`) {
+		t.Fatalf("handover cancellation: %d %s", response.Code, response.Body)
 	}
 	cancelPath := "/api/v1/orders/" + checkoutOrder.ID + "/cancel"
 	if response := call("POST", cancelPath, token, map[string]string{"expectedStatus": "pending_payment"}); response.Code != 409 || !strings.Contains(response.Body.String(), `"currentStatus":"confirmed"`) {

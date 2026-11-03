@@ -744,6 +744,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/vendor/orders/{id}/handover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The owning vendor hands over a confirmed order during its inclusive rental dates in Asia/Jakarta. */
+        post: operations["handoverOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1061,6 +1078,12 @@ export interface components {
         CancelInput: {
             /** @enum {string} */
             expectedStatus: "pending_payment" | "confirmed";
+        };
+        HandoverResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "renting" | "completed";
         };
     };
     responses: never;
@@ -3170,6 +3193,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VendorOrder"][];
+                };
+            };
+            /** @description Request failed */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    handoverOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-CSRF-Token"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Handover recorded or already completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoverResult"];
+                };
+            };
+            /** @description Order status or date does not allow handover */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderConflict"];
                 };
             };
             /** @description Request failed */
