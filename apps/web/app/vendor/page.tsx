@@ -1,13 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getDashboard, getSession } from "../../lib/session";
+import { getDashboard, getOwnStore, getSession } from "../../lib/session";
 import { VendorProducts } from "../../components/VendorProducts";
+import { VendorOrders } from "../../components/VendorOrders";
 export default async function Page() {
   const session = await getSession();
   if (!session) redirect("/masuk");
   const { store, unavailable } = await getDashboard();
   if (unavailable) throw new Error("Dashboard vendor belum tersedia.");
-  if (!store)
+  if (!store) {
+    const own = await getOwnStore();
+    if (own?.status === "suspended")
+      return (
+        <main className="section-width page-shell">
+          <div className="page-heading">
+            <h1>Pesanan toko {own.name}</h1>
+            <p>
+              Toko sedang ditangguhkan. Pesanan yang sudah ada tetap tersedia.
+            </p>
+          </div>
+          <VendorOrders />
+        </main>
+      );
     return (
       <main className="section-width page-shell">
         <div className="surface access-card">
@@ -27,6 +41,7 @@ export default async function Page() {
         </div>
       </main>
     );
+  }
   return (
     <main className="section-width page-shell">
       <div className="page-heading">
@@ -46,6 +61,7 @@ export default async function Page() {
           Lihat informasi toko ↗
         </Link>
       </section>
+      <VendorOrders />
       <VendorProducts csrfToken={session.csrfToken ?? ""} />
     </main>
   );
