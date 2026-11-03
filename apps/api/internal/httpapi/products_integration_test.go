@@ -168,7 +168,11 @@ func TestProductsIntegration(t *testing.T) {
 	if rec = call("POST", "/api/v1/vendor/products", otherToken, input); rec.Code != 400 {
 		t.Fatalf("other owner photo: %d %s", rec.Code, rec.Body)
 	}
-	otherInput := map[string]any{"categoryId": categoryID, "name": "Produk lain", "description": "Kamera lain", "dailyPrice": 20000, "stock": 1, "photoIds": []string{}}
+	var category2 string
+	if err = pool.QueryRow(ctx, `INSERT INTO categories(name,created_at,updated_at) VALUES('Audio',$1,$1) RETURNING id::text`, clk.Now()).Scan(&category2); err != nil {
+		t.Fatal(err)
+	}
+	otherInput := map[string]any{"categoryId": category2, "name": "Produk lain", "description": "Kamera lain", "dailyPrice": 20000, "stock": 1, "photoIds": []string{}}
 	rec = call("POST", "/api/v1/vendor/products", otherToken, otherInput)
 	if rec.Code != 201 {
 		t.Fatalf("other product: %d %s", rec.Code, rec.Body)
@@ -185,6 +189,43 @@ func TestProductsIntegration(t *testing.T) {
 	var a, b []product.Product
 	if page1.Code != 200 || page2.Code != 200 || json.Unmarshal(page1.Body.Bytes(), &a) != nil || json.Unmarshal(page2.Body.Bytes(), &b) != nil || len(a) != 1 || len(b) != 1 || a[0].ID == b[0].ID {
 		t.Fatalf("pagination: %s %s", page1.Body, page2.Body)
+	}
+	filteredFirst := call("GET", "/api/v1/products?q=kamera&page=1&page_size=1", "", nil)
+	filteredSecond := call("GET", "/api/v1/products?q=kamera&page=2&page_size=1", "", nil)
+	var filteredA, filteredB []product.Product
+	if filteredFirst.Code != 200 || filteredSecond.Code != 200 || json.Unmarshal(filteredFirst.Body.Bytes(), &filteredA) != nil || json.Unmarshal(filteredSecond.Body.Bytes(), &filteredB) != nil || len(filteredA) != 1 || len(filteredB) != 1 || filteredA[0].ID == filteredB[0].ID {
+		t.Fatalf("filtered pagination: %s %s", filteredFirst.Body, filteredSecond.Body)
+	}
+	checks := []struct {
+		path     string
+		wantID   string
+		absentID string
+	}{
+		{"/api/v1/products?q=produk%20LAIN", second.ID, p.ID},
+		{"/api/v1/products?q=SEWA", p.ID, second.ID},
+		{"/api/v1/products?category_id=" + categoryID, p.ID, second.ID},
+		{"/api/v1/products?q=kamera&category_id=" + category2, second.ID, p.ID},
+	}
+	for _, c := range checks {
+		rec = call("GET", c.path, "", nil)
+		if rec.Code != 200 || !strings.Contains(rec.Body.String(), c.wantID) || strings.Contains(rec.Body.String(), c.absentID) {
+			t.Fatalf("filter %s: %d %s", c.path, rec.Code, rec.Body)
+		}
+	}
+	if rec = call("GET", "/api/v1/products?q=%25", "", nil); rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != "[]" {
+		t.Fatalf("literal wildcard: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products?q="+strings.Repeat("x", 201), "", nil); rec.Code != 400 {
+		t.Fatalf("oversized query: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products/not-a-uuid", "", nil); rec.Code != 400 {
+		t.Fatalf("invalid product id: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products?category_id=invalid", "", nil); rec.Code != 400 {
+		t.Fatalf("invalid category filter: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products/"+p.ID, "", nil); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"storeAddress":"Jakarta"`) {
+		t.Fatalf("pickup address: %d %s", rec.Code, rec.Body)
 	}
 	if rec = call("DELETE", "/api/v1/admin/categories/"+categoryID, admin, nil); rec.Code != 409 {
 		t.Fatalf("category used: %d %s", rec.Code, rec.Body)
@@ -212,6 +253,9 @@ func TestProductsIntegration(t *testing.T) {
 	}
 	if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
 		t.Fatalf("hidden listed: %d %s", rec.Code, rec.Body)
+	}
+	if rec = call("GET", "/api/v1/products?q=kamera&category_id="+categoryID, "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
+		t.Fatalf("hidden search leaked: %d %s", rec.Code, rec.Body)
 	}
 	if rec = call("GET", "/api/v1/admin/products/"+p.ID, admin, nil); rec.Code != 200 || !strings.Contains(rec.Body.String(), "Perlu ditinjau") {
 		t.Fatalf("moderation history: %d %s", rec.Code, rec.Body)
