@@ -158,3 +158,9 @@ Penyewa, vendor toko terkait, dan admin dapat membatalkan pesanan sebelum serah 
 `POST /api/v1/orders/{id}/cancel` menerima `expectedStatus` (`pending_payment` atau `confirmed`) dan memerlukan sesi serta CSRF untuk browser. Pengulangan pembatalan mengembalikan hasil yang sama; jika status berubah sebelum pembatalan, API mengembalikan 409 dengan status saat ini. Pekerja API memeriksa hold saat dimulai dan setiap menit; hold yang sudah kedaluwarsa diabaikan dalam perhitungan stok meskipun belum dirapikan.
 
 Jalankan `pnpm test:cancellation` dengan variabel browser dan database demo terpisah seperti Phase 12. Test membuat akun, pesanan, pembayaran simulasi, dan refund.
+
+## Phase 14 - Serah terima barang
+
+Vendor pemilik toko dapat mengonfirmasi serah terima pesanan yang sudah terbayar pada tanggal mulai sampai tanggal selesai sewa, secara inklusif menurut waktu Asia/Jakarta. Status berubah menjadi `renting` dan terlihat sebagai **Sedang disewa** oleh vendor, penyewa, dan admin. Pengulangan konfirmasi tidak membuat riwayat baru. Pesanan yang sudah diserahkan tidak dapat dibatalkan; proses pengembalian dilanjutkan pada Phase 15.
+
+`POST /api/v1/vendor/orders/{id}/handover` memerlukan sesi vendor pemilik toko dan CSRF untuk browser. Status yang tidak sesuai atau tanggal di luar masa sewa menghasilkan 409. Gunakan database demo terpisah dengan simulator aktif dan variabel browser seperti Phase 12, lalu jalankan `pnpm test:handover`. Test membuat akun, pesanan, pembayaran, dan serah terima.

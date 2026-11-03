@@ -22,6 +22,7 @@ export function VendorOrders() {
   const [items, setItems] = useState<Order[]>([]);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+  const [handoverBusy, setHandoverBusy] = useState("");
   const load = useCallback(async () => {
     try {
       const result = await api.GET("/api/v1/vendor/orders", {
@@ -36,6 +37,33 @@ export function VendorOrders() {
       setError("Pesanan tidak dapat dimuat.");
     }
   }, [page]);
+  async function handover(id: string) {
+    if (handoverBusy) return;
+    setHandoverBusy(id);
+    setError("");
+    try {
+      const session = await api.GET("/api/v1/auth/session", {
+        cache: "no-store",
+      });
+      if (!session.data) {
+        setError("Silakan masuk kembali.");
+        return;
+      }
+      const result = await api.POST("/api/v1/vendor/orders/{id}/handover", {
+        params: { path: { id } },
+        headers: { "X-CSRF-Token": session.data.csrfToken },
+      });
+      if (!result.data) {
+        setError(result.error?.message ?? "Serah terima tidak berhasil.");
+        return;
+      }
+      await load();
+    } catch {
+      setError("Serah terima tidak berhasil. Coba lagi.");
+    } finally {
+      setHandoverBusy("");
+    }
+  }
   useEffect(() => {
     void load();
   }, [load]);
@@ -66,6 +94,17 @@ export function VendorOrders() {
                   Refund simulasi berhasil: {currency.format(item.refundAmount)}
                 </p>
               )}
+              {item.status === "confirmed" && (
+                <button
+                  type="button"
+                  disabled={handoverBusy !== ""}
+                  onClick={() => void handover(item.id)}
+                >
+                  {handoverBusy === item.id
+                    ? "Memproses..."
+                    : "Konfirmasi serah terima"}
+                </button>
+              )}{" "}
               {(item.status === "pending_payment" ||
                 item.status === "confirmed") && (
                 <CancelOrderButton

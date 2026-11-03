@@ -73,3 +73,8 @@
 - Pembatalan memerlukan status yang terakhir dilihat klien dan mengunci baris pesanan yang sama dengan simulator pembayaran. Jika status berubah sebelum kunci diperoleh, API mengembalikan 409; pengulangan pesanan yang sudah dibatalkan mengembalikan hasil refund tersimpan.
 - Refund simulasi penuh dibuat dalam transaksi pembatalan untuk pembayaran sukses, dengan constraint unik pada pembayaran. Pembersih hold berjalan saat API dimulai dan setiap menit, memakai `Clock`, batch 200, serta penguncian `SKIP LOCKED` agar aman terhadap tindakan pada pesanan yang sama.
 - Properti `refundAmount` pada kontrak detail pesanan bersifat opsional untuk mendukung respons checkout lama yang masih tersimpan sebagai hasil idempotensi. Respons detail yang baru menyertakan nilai nol atau jumlah refund.
+
+## Phase 14 - Serah terima barang
+
+- Serah terima mengunci baris pesanan yang sama dengan pembatalan, memeriksa kepemilikan toko serta tanggal inklusif memakai `Clock` dan Asia/Jakarta, lalu mencatat aktor dalam riwayat. Toko yang ditangguhkan tetap dapat memproses pesanan yang sudah ada.
+- Pengulangan saat pesanan `renting` mengembalikan status saat ini tanpa riwayat tambahan. Setelah pesanan selesai, pengulangan juga mengembalikan status saat ini bila riwayat menunjukkan serah terima sudah terjadi.

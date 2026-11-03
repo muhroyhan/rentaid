@@ -155,4 +155,92 @@ func TestCancellationIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT count(*) FROM order_status_history WHERE order_id=$1`, race).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("race history %d %v", count, err)
 	}
+	handover := mkOrder("RNT-HANDOVER", "confirmed", now.Add(time.Hour))
+	if _, err = pool.Exec(ctx, `UPDATE orders SET start_date='2026-11-06',end_date='2026-11-07' WHERE id=$1`, handover); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = service.Handover(ctx, handover, renter); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("renter handover: %v", err)
+	}
+	if _, err = service.Handover(ctx, handover, other); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("other vendor handover: %v", err)
+	}
+	clk.now = time.Date(2026, 11, 5, 16, 59, 59, 0, time.UTC)
+	if _, err = service.Handover(ctx, handover, owner); !errors.Is(err, ErrOutsideWindow) {
+		t.Fatalf("before Jakarta start: %v", err)
+	}
+	clk.now = time.Date(2026, 11, 5, 17, 0, 0, 0, time.UTC)
+	if state, err = service.Handover(ctx, handover, owner); err != nil || state != "renting" {
+		t.Fatalf("handover: %s %v", state, err)
+	}
+	if state, err = service.Handover(ctx, handover, owner); err != nil || state != "renting" {
+		t.Fatalf("repeated handover: %s %v", state, err)
+	}
+	var actorID string
+	if err = pool.QueryRow(ctx, `SELECT count(*),max(actor_id::text) FROM order_status_history WHERE order_id=$1 AND from_status='confirmed' AND to_status='renting'`, handover).Scan(&count, &actorID); err != nil || count != 1 || actorID != owner {
+		t.Fatalf("handover audit count=%d actor=%s err=%v", count, actorID, err)
+	}
+	if _, err = service.Cancel(ctx, handover, renter, "user", "confirmed"); !errors.As(err, &conflict) || conflict.Status != "renting" {
+		t.Fatalf("cancel after handover: %v", err)
+	}
+	if _, err = pool.Exec(ctx, `UPDATE orders SET status='completed' WHERE id=$1`, handover); err != nil {
+		t.Fatal(err)
+	}
+	if state, err = service.Handover(ctx, handover, owner); err != nil || state != "completed" {
+		t.Fatalf("completed replay: %s %v", state, err)
+	}
+	last := mkOrder("RNT-END", "confirmed", now.Add(time.Hour))
+	if _, err = pool.Exec(ctx, `UPDATE orders SET start_date='2026-11-06',end_date='2026-11-07' WHERE id=$1`, last); err != nil {
+		t.Fatal(err)
+	}
+	clk.now = time.Date(2026, 11, 7, 16, 59, 59, 0, time.UTC)
+	if state, err = service.Handover(ctx, last, owner); err != nil || state != "renting" {
+		t.Fatalf("last day: %s %v", state, err)
+	}
+	after := mkOrder("RNT-AFTER", "confirmed", now.Add(time.Hour))
+	if _, err = pool.Exec(ctx, `UPDATE orders SET start_date='2026-11-06',end_date='2026-11-07' WHERE id=$1`, after); err != nil {
+		t.Fatal(err)
+	}
+	clk.now = time.Date(2026, 11, 7, 17, 0, 0, 0, time.UTC)
+	if _, err = service.Handover(ctx, after, owner); !errors.Is(err, ErrOutsideWindow) {
+		t.Fatalf("after Jakarta end: %v", err)
+	}
+	for _, invalid := range []struct{ id, status string }{{pending, "cancelled"}, {expired, "expired"}, {active, "expired"}} {
+		if _, err = service.Handover(ctx, invalid.id, owner); !errors.As(err, &conflict) || conflict.Status != invalid.status {
+			t.Fatalf("state %s: %v", invalid.status, err)
+		}
+	}
+	unpaid := mkOrder("RNT-UNPAID", "pending_payment", now.Add(time.Hour))
+	if _, err = service.Handover(ctx, unpaid, owner); !errors.As(err, &conflict) || conflict.Status != "pending_payment" {
+		t.Fatalf("unpaid: %v", err)
+	}
+
+	simultaneous := mkOrder("RNT-HANDOVER-RACE", "confirmed", now.Add(time.Hour))
+	if _, err = pool.Exec(ctx, `UPDATE orders SET start_date='2026-11-08',end_date='2026-11-08' WHERE id=$1`, simultaneous); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, `INSERT INTO payments(order_id,amount,status,created_at) VALUES($1,20000,'succeeded',$2)`, simultaneous, now); err != nil {
+		t.Fatal(err)
+	}
+	var handErr, cancelRaceErr error
+	wg.Add(2)
+	go func() { defer wg.Done(); _, handErr = service.Handover(ctx, simultaneous, owner) }()
+	go func() {
+		defer wg.Done()
+		_, cancelRaceErr = service.Cancel(ctx, simultaneous, renter, "user", "confirmed")
+	}()
+	wg.Wait()
+	if handErr == nil {
+		if !errors.As(cancelRaceErr, &conflict) || conflict.Status != "renting" {
+			t.Fatalf("handover race cancellation: %v", cancelRaceErr)
+		}
+	} else {
+		if cancelRaceErr != nil || !errors.As(handErr, &conflict) || conflict.Status != "cancelled" {
+			t.Fatalf("handover race: hand=%v cancel=%v", handErr, cancelRaceErr)
+		}
+	}
+	if err = pool.QueryRow(ctx, `SELECT count(*) FROM order_status_history WHERE order_id=$1`, simultaneous).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("handover race audit=%d %v", count, err)
+	}
+
 }

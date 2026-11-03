@@ -3063,6 +3063,70 @@
           }
         }
       }
+    },
+    "/api/v1/vendor/orders/{id}/handover": {
+      "post": {
+        "operationId": "handoverOrder",
+        "description": "The owning vendor hands over a confirmed order during its inclusive rental dates in Asia/Jakarta.",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handover recorded or already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandoverResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Order status or date does not allow handover",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderConflict"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4070,6 +4134,21 @@
           "expectedStatus": {
             "type": "string",
             "enum": ["pending_payment", "confirmed"]
+          }
+        }
+      },
+      "HandoverResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["renting", "completed"]
           }
         }
       }
