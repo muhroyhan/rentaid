@@ -31,17 +31,19 @@ type Payment struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 type VendorOrder struct {
-	ID          string    `json:"id"`
-	OrderCode   string    `json:"orderCode"`
-	ProductName string    `json:"productName"`
-	RenterName  string    `json:"renterName"`
-	RenterPhone string    `json:"renterPhone"`
-	StartDate   string    `json:"startDate"`
-	EndDate     string    `json:"endDate"`
-	Quantity    int32     `json:"quantity"`
-	Total       int64     `json:"total"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"createdAt"`
+	ID           string    `json:"id"`
+	OrderCode    string    `json:"orderCode"`
+	ProductName  string    `json:"productName"`
+	StoreName    string    `json:"storeName"`
+	RefundAmount int64     `json:"refundAmount"`
+	RenterName   string    `json:"renterName"`
+	RenterPhone  string    `json:"renterPhone"`
+	StartDate    string    `json:"startDate"`
+	EndDate      string    `json:"endDate"`
+	Quantity     int32     `json:"quantity"`
+	Total        int64     `json:"total"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 type Service struct {
 	Pool    *pgxpool.Pool
@@ -178,7 +180,13 @@ func (s *Service) Get(ctx context.Context, id string) (Payment, error) {
 	return scanPayment(s.Pool.QueryRow(ctx, paymentSelect+`WHERE p.id=$1`, id))
 }
 func (s *Service) VendorOrders(ctx context.Context, user string, page, size int) ([]VendorOrder, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT o.id::text,o.order_code,o.product_name,u.name,u.phone,o.start_date,o.end_date,o.quantity,o.total,o.status,o.created_at FROM orders o JOIN products p ON p.id=o.product_id JOIN stores s ON s.id=p.store_id JOIN users u ON u.id=o.user_id WHERE s.owner_id=$1 ORDER BY o.created_at DESC,o.id DESC LIMIT $2 OFFSET $3`, user, size, int64(page-1)*int64(size))
+	return s.orders(ctx, user, page, size)
+}
+func (s *Service) AdminOrders(ctx context.Context, page, size int) ([]VendorOrder, error) {
+	return s.orders(ctx, nil, page, size)
+}
+func (s *Service) orders(ctx context.Context, user any, page, size int) ([]VendorOrder, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT o.id::text,o.order_code,o.product_name,o.store_name,COALESCE((SELECT r.amount FROM refunds r JOIN payments pay ON pay.id=r.payment_id WHERE pay.order_id=o.id),0),u.name,u.phone,o.start_date,o.end_date,o.quantity,o.total,o.status,o.created_at FROM orders o JOIN products p ON p.id=o.product_id JOIN stores s ON s.id=p.store_id JOIN users u ON u.id=o.user_id WHERE ($1::uuid IS NULL OR s.owner_id=$1::uuid) ORDER BY o.created_at DESC,o.id DESC LIMIT $2 OFFSET $3`, user, size, int64(page-1)*int64(size))
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +195,7 @@ func (s *Service) VendorOrders(ctx context.Context, user string, page, size int)
 	for rows.Next() {
 		var v VendorOrder
 		var start, end time.Time
-		if err = rows.Scan(&v.ID, &v.OrderCode, &v.ProductName, &v.RenterName, &v.RenterPhone, &start, &end, &v.Quantity, &v.Total, &v.Status, &v.CreatedAt); err != nil {
+		if err = rows.Scan(&v.ID, &v.OrderCode, &v.ProductName, &v.StoreName, &v.RefundAmount, &v.RenterName, &v.RenterPhone, &start, &end, &v.Quantity, &v.Total, &v.Status, &v.CreatedAt); err != nil {
 			return nil, err
 		}
 		v.StartDate = start.Format("2006-01-02")

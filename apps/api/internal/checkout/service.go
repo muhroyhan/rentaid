@@ -46,6 +46,7 @@ type Order struct {
 	Quantity     int32     `json:"quantity"`
 	DailyPrice   int64     `json:"dailyPrice"`
 	Total        int64     `json:"total"`
+	RefundAmount int64     `json:"refundAmount"`
 	Status       string    `json:"status"`
 	HoldUntil    time.Time `json:"holdUntil"`
 	CreatedAt    time.Time `json:"createdAt"`
@@ -209,7 +210,7 @@ func equal(a, b []byte) bool { return string(a) == string(b) }
 func (s *Service) Get(ctx context.Context, user, id string) (Order, error) {
 	var o Order
 	var a, b time.Time
-	err := s.Pool.QueryRow(ctx, `SELECT id::text,order_code,product_id::text,product_name,store_name,store_address,start_date,end_date,quantity,daily_price,total,status,hold_until,created_at FROM orders WHERE id=$1 AND user_id=$2`, id, user).Scan(&o.ID, &o.OrderCode, &o.ProductID, &o.ProductName, &o.StoreName, &o.StoreAddress, &a, &b, &o.Quantity, &o.DailyPrice, &o.Total, &o.Status, &o.HoldUntil, &o.CreatedAt)
+	err := s.Pool.QueryRow(ctx, `SELECT id::text,order_code,product_id::text,product_name,store_name,store_address,start_date,end_date,quantity,daily_price,total,status,hold_until,created_at,COALESCE((SELECT r.amount FROM refunds r JOIN payments p ON p.id=r.payment_id WHERE p.order_id=orders.id),0) FROM orders WHERE id=$1 AND user_id=$2`, id, user).Scan(&o.ID, &o.OrderCode, &o.ProductID, &o.ProductName, &o.StoreName, &o.StoreAddress, &a, &b, &o.Quantity, &o.DailyPrice, &o.Total, &o.Status, &o.HoldUntil, &o.CreatedAt, &o.RefundAmount)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Order{}, ErrNotFound
 	}

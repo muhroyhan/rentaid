@@ -199,6 +199,9 @@ func TestProductsIntegration(t *testing.T) {
 	if err = json.Unmarshal(created.Body.Bytes(), &checkoutOrder); err != nil {
 		t.Fatal(err)
 	}
+	if _, err = pool.Exec(ctx, `UPDATE idempotency_keys SET response_body=response_body-'refundAmount' WHERE endpoint='checkout' AND key='successful'`); err != nil {
+		t.Fatal(err)
+	}
 	if response := checkoutCall("successful", 200000); response.Code != 201 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
 		t.Fatalf("replay: %d %s", response.Code, response.Body)
 	}
@@ -258,6 +261,25 @@ func TestProductsIntegration(t *testing.T) {
 	}
 	if response := call("GET", "/api/v1/vendor/orders", otherToken, nil); response.Code != 200 || strings.Contains(response.Body.String(), checkoutOrder.ID) {
 		t.Fatalf("other vendor orders: %d %s", response.Code, response.Body)
+	}
+	cancelPath := "/api/v1/orders/" + checkoutOrder.ID + "/cancel"
+	if response := call("POST", cancelPath, token, map[string]string{"expectedStatus": "pending_payment"}); response.Code != 409 || !strings.Contains(response.Body.String(), `"currentStatus":"confirmed"`) {
+		t.Fatalf("stale cancellation: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", cancelPath, token, map[string]string{"expectedStatus": "confirmed"}); response.Code != 200 || !strings.Contains(response.Body.String(), `"refundAmount":200000`) {
+		t.Fatalf("vendor cancellation: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", cancelPath, otherToken, map[string]string{"expectedStatus": "confirmed"}); response.Code != 200 || !strings.Contains(response.Body.String(), `"refundAmount":200000`) {
+		t.Fatalf("cancellation replay: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, otherToken, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"refundAmount":200000`) {
+		t.Fatalf("refund detail: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/orders", admin, nil); response.Code != 200 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
+		t.Fatalf("admin orders: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/orders", token, nil); response.Code != 403 {
+		t.Fatalf("admin order authorization: %d %s", response.Code, response.Body)
 	}
 	if rec = call("GET", "/api/v1/media/"+photo.ID, "", nil); rec.Code != 200 {
 		t.Fatalf("published photo: %d", rec.Code)
