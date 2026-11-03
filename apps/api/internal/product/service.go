@@ -176,6 +176,30 @@ func (s *Service) Update(ctx context.Context, owner, id string, in Input) (Produ
 	if err != nil {
 		return Product{}, err
 	}
+	var currentStock int32
+	err = tx.QueryRow(ctx, `SELECT stock FROM products WHERE id=$1 AND store_id=$2 FOR UPDATE`, id, store).Scan(&currentStock)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Product{}, ErrNotFound
+	}
+	if err != nil {
+		return Product{}, err
+	}
+	if in.Stock < currentStock {
+		now := s.Clock.Now().UTC()
+		loc, e := clock.Jakarta()
+		if e != nil {
+			return Product{}, e
+		}
+		today := now.In(loc).Format("2006-01-02")
+		var peak int64
+		err = tx.QueryRow(ctx, `SELECT COALESCE(MAX((SELECT COALESCE(SUM(o.quantity),0) FROM orders o WHERE o.product_id=$1 AND o.start_date<=d.day AND o.end_date>=d.day AND (o.status IN ('confirmed','renting') OR (o.status='pending_payment' AND o.hold_until>$3)))),0) FROM (SELECT $2::date AS day UNION SELECT start_date FROM orders WHERE product_id=$1 AND start_date >= $2::date AND (status IN ('confirmed','renting') OR (status='pending_payment' AND hold_until>$3))) d`, id, today, now).Scan(&peak)
+		if err != nil {
+			return Product{}, err
+		}
+		if int64(in.Stock) < peak {
+			return Product{}, ErrConflict
+		}
+	}
 	result, err := tx.Exec(ctx, `UPDATE products SET category_id=$3,name=$4,description=$5,daily_price=$6,stock=$7,updated_at=$8 WHERE id=$1 AND store_id=$2`, id, store, in.CategoryID, in.Name, in.Description, in.DailyPrice, in.Stock, s.Clock.Now().UTC())
 	if err != nil {
 		return Product{}, dbError(err)

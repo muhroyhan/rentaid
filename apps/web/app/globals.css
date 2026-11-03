@@ -1398,3 +1398,45 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+.checkout-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--green);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checkout-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.order-card {
+  max-width: 620px;
+  margin: 32px auto;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f6f8f3;
+}
+.order-card h1 {
+  font:
+    38px Georgia,
+    serif;
+  color: var(--green);
+}
+.order-card h2 {
+  font:
+    25px Georgia,
+    serif;
+}
+.order-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.order-card strong {
+  font-size: 22px;
+  color: var(--green);
+}

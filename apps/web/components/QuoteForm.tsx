@@ -1,5 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { components } from "@rentaid/api-client";
 import { api } from "../lib/api";
 
@@ -16,6 +18,9 @@ export function QuoteForm({
   productId: string;
   stock: number;
 }) {
+  const router = useRouter();
+  const [needLogin, setNeedLogin] = useState(false);
+  const [needPhone, setNeedPhone] = useState(false);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -46,6 +51,65 @@ export function QuoteForm({
         );
     } catch {
       setError("Penawaran belum tersedia. Periksa koneksi dan coba lagi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function checkout() {
+    if (!quote || busy) return;
+    setError("");
+    setNeedLogin(false);
+    setNeedPhone(false);
+    setBusy(true);
+    try {
+      const session = await api.GET("/api/v1/auth/session", {
+        cache: "no-store",
+      });
+      if (session.response.status === 401) {
+        setNeedLogin(true);
+        setError("Silakan masuk sebelum checkout.");
+        return;
+      }
+      if (!session.data) throw new Error("Sesi tidak dapat diperiksa.");
+      const body = {
+        productId,
+        startDate: quote.startDate,
+        endDate: quote.endDate,
+        quantity: quote.quantity,
+        expectedTotal: quote.total,
+        expectedAvailable: quote.available,
+      };
+      const storageKey = `rentaid-checkout:${JSON.stringify(body)}`;
+      let key = sessionStorage.getItem(storageKey);
+      if (!key) {
+        key = crypto.randomUUID();
+        sessionStorage.setItem(storageKey, key);
+      }
+      const result = await api.POST("/api/v1/checkout", {
+        params: {
+          header: {
+            "X-CSRF-Token": session.data.csrfToken,
+            "Idempotency-Key": key,
+          },
+        },
+        body,
+      });
+      if (result.data) {
+        sessionStorage.removeItem(storageKey);
+        router.push(`/pesanan/${result.data.id}`);
+        return;
+      }
+      if (result.error && "quote" in result.error) {
+        setQuote(result.error.quote);
+        sessionStorage.removeItem(storageKey);
+      }
+      if (result.response.status >= 400 && result.response.status < 500)
+        sessionStorage.removeItem(storageKey);
+      if (result.error?.code === "phone_required") setNeedPhone(true);
+      if (result.response.status === 401) setNeedLogin(true);
+      setError(result.error?.message ?? "Checkout belum berhasil. Coba lagi.");
+    } catch {
+      setError("Checkout belum berhasil. Coba lagi dengan data yang sama.");
     } finally {
       setBusy(false);
     }
@@ -108,7 +172,8 @@ export function QuoteForm({
       </form>
       {error && (
         <p role="alert" className="quote-error">
-          {error}
+          {error} {needLogin && <Link href="/masuk">Masuk</Link>}{" "}
+          {needPhone && <Link href="/akun">Lengkapi profil</Link>}
         </p>
       )}
       {quote && (
@@ -121,6 +186,14 @@ export function QuoteForm({
           <p>Tersedia untuk tanggal ini: {quote.available}</p>
           <strong>Total {currency.format(quote.total)}</strong>
           <p>Penawaran ini belum menahan stok.</p>
+          <button
+            className="checkout-button"
+            type="button"
+            disabled={busy || quote.available < quote.quantity}
+            onClick={() => void checkout()}
+          >
+            {busy ? "Memproses..." : "Lanjut ke checkout"}
+          </button>
         </div>
       )}
     </section>

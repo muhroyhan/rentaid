@@ -616,6 +616,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -826,6 +858,49 @@ export interface components {
             available: number;
             /** Format: int64 */
             total: number;
+        };
+        CheckoutInput: {
+            /** Format: uuid */
+            productId: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            quantity: number;
+            /** Format: int64 */
+            expectedTotal: number;
+            expectedAvailable: number;
+        };
+        Order: {
+            /** Format: uuid */
+            id: string;
+            orderCode: string;
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            storeName: string;
+            storeAddress: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            quantity: number;
+            /** Format: int64 */
+            dailyPrice: number;
+            /** Format: int64 */
+            total: number;
+            /** @enum {string} */
+            status: "pending_payment" | "confirmed" | "renting" | "completed" | "cancelled" | "expired" | "payment_failed";
+            /** Format: date-time */
+            holdUntil: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        QuoteChanged: {
+            /** @enum {string} */
+            code: "quote_changed";
+            message: string;
+            quote: components["schemas"]["Quote"];
         };
     };
     responses: never;
@@ -2644,6 +2719,82 @@ export interface operations {
                 };
             };
             /** @description Invalid dates, unavailable stock, or request failure */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkout: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                "X-CSRF-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutInput"];
+            };
+        };
+        responses: {
+            /** @description Order created or replayed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description Quote changed or key reused */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteChanged"] | components["schemas"]["Error"];
+                };
+            };
+            /** @description Request failed */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order for its owner */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description Request failed */
             default: {
                 headers: {
                     [name: string]: unknown;
