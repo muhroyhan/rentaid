@@ -119,6 +119,14 @@ Pengunjung dapat mendaftar, masuk, memperbarui profil, mengajukan toko, melihat 
 
 Vendor dengan toko yang disetujui dapat membuka dashboard dan menambahkan atau mengedit produk dengan nama, deskripsi, kategori, harga harian, stok, serta maksimal sepuluh foto opsional. Simpan produk sebagai draft, lalu pilih **Terbitkan** agar tampil pada API katalog publik. Vendor juga dapat menghentikan publikasi, mengarsipkan, dan memulihkan produk sebagai draft. Label moderasi menunjukkan jika admin menyembunyikan produk. Harga harus positif; stok boleh nol.
 
-Foto JPEG, PNG, atau WebP dibatasi 5 MB per file dan divalidasi API dari isi file. Foto yang dihapus dari formulir atau tidak jadi digunakan tidak otomatis dihapus dari penyimpanan lokal. Aturan stok terhadap pesanan aktif dan produk yang pernah dipesan diterapkan pada Phase 11. Halaman katalog publik menyusul pada Phase 09; pada phase ini publikasi diverifikasi melalui API.
+Foto JPEG, PNG, atau WebP dibatasi 5 MB per file dan divalidasi API dari isi file. Foto yang dihapus dari formulir atau tidak jadi digunakan tidak otomatis dihapus dari penyimpanan lokal. Aturan stok terhadap pesanan aktif dan produk yang pernah dipesan diterapkan pada Phase 11.
 
 Untuk uji browser, gunakan database test terpisah yang sudah diberi seed admin dan demo, lalu tetapkan `E2E_WEB_URL`, `E2E_ADMIN_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_VENDOR_PASSWORD`, dan `CHROME_PATH`. `E2E_VENDOR_PASSWORD` adalah password seed demo untuk `demo.approved@example.test`. Jalankan `pnpm test:vendor-products`. Test membuat dan mengubah produk serta akun dan toko test, dan memproses moderasi melalui admin.
+
+## Phase 09 - Katalog publik
+
+Beranda menampilkan konten `home` yang diterbitkan melalui CMS dan pilihan produk publik. Pengunjung dapat membuka `/katalog`, mencari nama atau deskripsi produk, memfilter kategori, berpindah halaman, dan membuka detail berisi foto, harga harian, stok, nama toko, dan alamat pengambilan. Produk yang tidak lagi publik tidak dapat dibuka. Beranda dan katalog tetap memberikan pesan yang sesuai ketika konten kosong atau API tidak tersedia.
+
+API `GET /api/v1/products` menerima `q`, `category_id`, `page`, dan `page_size`. Pencarian nama dan deskripsi tidak membedakan huruf besar/kecil dan memperlakukan karakter pencarian sebagai teks biasa. Data publik diambil tanpa cache agar publikasi CMS dan moderasi produk segera terlihat.
+
+Jalankan `pnpm test:public-catalog` dengan variabel browser dan database test terpisah seperti Phase 08. Test membuat produk dan mengubah konten beranda serta status moderasi, sehingga tidak boleh diarahkan ke data pengguna. `pnpm test:catalog-errors` memeriksa penanganan kegagalan API tanpa database.

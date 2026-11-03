@@ -1927,6 +1927,24 @@
               "default": 20,
               "maximum": 50
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive literal match in product name or description.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -2960,7 +2978,8 @@
           "archived",
           "hidden",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "storeAddress"
         ],
         "properties": {
           "id": {
@@ -3026,6 +3045,10 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "storeAddress": {
+            "type": "string",
+            "description": "Store pickup address."
           }
         }
       },

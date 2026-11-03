@@ -45,3 +45,9 @@
 
 - Formulir memakai klien OpenAPI untuk data dan status produk, serta `fetch` dengan body biner untuk upload foto karena tipe biner generator saat ini berupa string. Foto yang telah diunggah hanya terhubung ke produk setelah formulir disimpan; aset yang dilepas belum dibersihkan otomatis.
 - Kategori diambil per halaman dengan ukuran 50 sampai habis; produk vendor ditampilkan 20 per halaman. Formulir menampilkan validasi API dan status moderasi, serta meminta konfirmasi saat membatalkan perubahan yang belum disimpan.
+
+## Phase 09 - Katalog publik
+
+- Pencarian produk publik mencocokkan teks literal tanpa membedakan huruf besar/kecil pada nama dan deskripsi; filter kategori memakai UUID. Pengurutan tetap berdasarkan waktu pembuatan dan UUID agar pagination deterministik.
+- Katalog menampilkan 12 produk per halaman dan memeriksa halaman berikutnya untuk menentukan navigasi. Alamat toko disertakan pada respons produk sebagai informasi pengambilan.
+- Konten CMS dan produk publik dibaca tanpa cache; prefetch tautan produk dinonaktifkan agar detail memeriksa kembali status publik saat pengunjung membukanya.

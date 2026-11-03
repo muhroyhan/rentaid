@@ -3,6 +3,7 @@ package product
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -22,6 +23,7 @@ type Product struct {
 	ID           string    `json:"id"`
 	StoreID      string    `json:"storeId"`
 	StoreName    string    `json:"storeName"`
+	StoreAddress string    `json:"storeAddress"`
 	CategoryID   string    `json:"categoryId"`
 	CategoryName string    `json:"categoryName"`
 	Name         string    `json:"name"`
@@ -58,14 +60,14 @@ type Service struct {
 	Clock clock.Clock
 }
 
-const fields = `p.id::text,p.store_id::text,s.name,p.category_id::text,c.name,p.name,p.description,p.daily_price,p.stock,p.published,p.archived,p.hidden,ARRAY(SELECT media_id::text FROM product_photos WHERE product_id=p.id ORDER BY position),p.created_at,p.updated_at`
+const fields = `p.id::text,p.store_id::text,s.name,s.address,p.category_id::text,c.name,p.name,p.description,p.daily_price,p.stock,p.published,p.archived,p.hidden,ARRAY(SELECT media_id::text FROM product_photos WHERE product_id=p.id ORDER BY position),p.created_at,p.updated_at`
 const joins = ` FROM products p JOIN stores s ON s.id=p.store_id JOIN categories c ON c.id=p.category_id `
 
 type scanner interface{ Scan(...any) error }
 
 func scan(row scanner) (Product, error) {
 	var p Product
-	err := row.Scan(&p.ID, &p.StoreID, &p.StoreName, &p.CategoryID, &p.CategoryName, &p.Name, &p.Description, &p.DailyPrice, &p.Stock, &p.Published, &p.Archived, &p.Hidden, &p.PhotoIDs, &p.CreatedAt, &p.UpdatedAt)
+	err := row.Scan(&p.ID, &p.StoreID, &p.StoreName, &p.StoreAddress, &p.CategoryID, &p.CategoryName, &p.Name, &p.Description, &p.DailyPrice, &p.Stock, &p.Published, &p.Archived, &p.Hidden, &p.PhotoIDs, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Product{}, ErrNotFound
 	}
@@ -234,7 +236,7 @@ func (s *Service) ChangeState(ctx context.Context, owner, id, action string, val
 	}
 	return v, nil
 }
-func (s *Service) List(ctx context.Context, scope, owner string, page, size int) ([]Product, error) {
+func (s *Service) List(ctx context.Context, scope, owner, search, categoryID string, page, size int) ([]Product, error) {
 	query := `SELECT ` + fields + joins
 	args := []any{}
 	switch scope {
@@ -247,12 +249,15 @@ func (s *Service) List(ctx context.Context, scope, owner string, page, size int)
 	default:
 		return nil, ErrInvalid
 	}
-	query += ` ORDER BY p.created_at DESC,p.id DESC LIMIT `
-	if len(args) == 0 {
-		query += `$1 OFFSET $2`
-	} else {
-		query += `$2 OFFSET $3`
+	if scope == "public" && strings.TrimSpace(search) != "" {
+		args = append(args, strings.TrimSpace(search))
+		query += fmt.Sprintf(` AND strpos(lower(p.name || ' ' || p.description), lower($%d)) > 0`, len(args))
 	}
+	if scope == "public" && categoryID != "" {
+		args = append(args, categoryID)
+		query += fmt.Sprintf(` AND p.category_id=$%d`, len(args))
+	}
+	query += fmt.Sprintf(` ORDER BY p.created_at DESC,p.id DESC LIMIT $%d OFFSET $%d`, len(args)+1, len(args)+2)
 	args = append(args, size, int64(page-1)*int64(size))
 	rows, err := s.Pool.Query(ctx, query, args...)
 	if err != nil {

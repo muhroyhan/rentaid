@@ -773,6 +773,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Store pickup address. */
+            storeAddress: string;
         };
         ProductStateInput: {
             value: boolean;
@@ -2195,6 +2197,10 @@ export interface operations {
             query?: {
                 page?: number;
                 page_size?: number;
+                /** @description Case-insensitive literal match in product name or description. */
+                q?: string;
+                /** @description Filter by category UUID. */
+                category_id?: string;
             };
             header?: never;
             path?: never;

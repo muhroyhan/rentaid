@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"rentaid.local/api/internal/auth"
 	"rentaid.local/api/internal/product"
 	"strconv"
+	"unicode/utf8"
 )
+
+var productUUID = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 func productError(w http.ResponseWriter, err error) {
 	switch {
@@ -52,7 +56,12 @@ func registerProducts(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 				errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
 				return
 			}
-			v, err := products.List(r.Context(), scope, owner, page, size)
+			search, category := r.URL.Query().Get("q"), r.URL.Query().Get("category_id")
+			if scope == "public" && (utf8.RuneCountInString(search) > 200 || (category != "" && !productUUID.MatchString(category))) {
+				errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
+				return
+			}
+			v, err := products.List(r.Context(), scope, owner, search, category, page, size)
 			if err != nil {
 				productError(w, err)
 				return
@@ -69,6 +78,10 @@ func registerProducts(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 					return
 				}
 				owner = session.User.ID
+			}
+			if !productUUID.MatchString(r.PathValue("id")) {
+				errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
+				return
 			}
 			v, err := products.Get(r.Context(), r.PathValue("id"), scope, owner)
 			if err != nil {

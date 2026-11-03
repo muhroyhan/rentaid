@@ -11,7 +11,13 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await getSession();
+  let session: Awaited<ReturnType<typeof getSession>> = null;
+  let sessionUnavailable = false;
+  try {
+    session = await getSession();
+  } catch {
+    sessionUnavailable = true;
+  }
   return (
     <html lang="id">
       <body>
@@ -23,11 +29,16 @@ export default async function RootLayout({
             </Link>
             <nav aria-label="Navigasi utama">
               <Link href="/">Beranda</Link>
+              <Link href="/katalog">Katalog</Link>
               <Link href="/toko">Buka toko</Link>
               {session && <Link href="/akun">Akun saya</Link>}
             </nav>
             <div className="header-actions">
-              {session ? (
+              {sessionUnavailable ? (
+                <span className="small-error" role="status">
+                  Layanan akun belum tersedia.
+                </span>
+              ) : session ? (
                 <LogoutButton csrfToken={session.csrfToken ?? ""} />
               ) : (
                 <>

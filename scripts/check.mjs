@@ -35,6 +35,7 @@ for (const path of ["apps", "packages", "infra", "tests"]) {
 }
 const commands = [
   ["pnpm", ["contracts:check"]],
+  ["pnpm", ["test:catalog-errors"]],
   ["pnpm", ["--filter", "@rentaid/api-client", "typecheck"]],
   ["pnpm", ["--filter", "@rentaid/admin", "typecheck"]],
   ["pnpm", ["--filter", "@rentaid/web", "typecheck"]],
