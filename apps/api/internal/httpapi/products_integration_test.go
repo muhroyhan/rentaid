@@ -294,6 +294,26 @@ func TestProductsIntegration(t *testing.T) {
 	if response := call("POST", "/api/v1/orders/"+handoverID+"/cancel", otherToken, map[string]string{"expectedStatus": "confirmed"}); response.Code != 409 || !strings.Contains(response.Body.String(), `"currentStatus":"renting"`) {
 		t.Fatalf("handover cancellation: %d %s", response.Code, response.Body)
 	}
+	returnPath := "/api/v1/vendor/orders/" + handoverID + "/return"
+	if response := call("POST", returnPath, otherToken, nil); response.Code != 404 {
+		t.Fatalf("unrelated vendor return: %d %s", response.Code, response.Body)
+	}
+	if response := call("POST", returnPath, admin, nil); response.Code != 403 {
+		t.Fatalf("admin return: %d %s", response.Code, response.Body)
+	}
+	returned := call("POST", returnPath, token, nil)
+	if returned.Code != 200 || !strings.Contains(returned.Body.String(), `"status":"completed"`) || !strings.Contains(returned.Body.String(), `"returnedAt"`) {
+		t.Fatalf("return: %d %s", returned.Code, returned.Body)
+	}
+	if response := call("POST", returnPath, token, nil); response.Code != 200 || response.Body.String() != returned.Body.String() {
+		t.Fatalf("return replay: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/orders/"+handoverID, otherToken, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"status":"completed"`) || !strings.Contains(response.Body.String(), `"returnedAt"`) {
+		t.Fatalf("renter return status: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/orders", admin, nil); response.Code != 200 || !strings.Contains(response.Body.String(), `"returnedAt"`) {
+		t.Fatalf("admin return status: %d %s", response.Code, response.Body)
+	}
 	cancelPath := "/api/v1/orders/" + checkoutOrder.ID + "/cancel"
 	if response := call("POST", cancelPath, token, map[string]string{"expectedStatus": "pending_payment"}); response.Code != 409 || !strings.Contains(response.Body.String(), `"currentStatus":"confirmed"`) {
 		t.Fatalf("stale cancellation: %d %s", response.Code, response.Body)

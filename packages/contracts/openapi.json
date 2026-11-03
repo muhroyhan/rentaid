@@ -3127,6 +3127,70 @@
           }
         }
       }
+    },
+    "/api/v1/vendor/orders/{id}/return": {
+      "post": {
+        "operationId": "returnOrder",
+        "description": "The owning vendor confirms return of an order being rented; rental dates remain reserved.",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return recorded or already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Order status does not allow return",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderConflict"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3921,6 +3985,10 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "returnedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -4103,6 +4171,10 @@
           },
           "storeName": {
             "type": "string"
+          },
+          "returnedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -4149,6 +4221,25 @@
           "status": {
             "type": "string",
             "enum": ["renting", "completed"]
+          }
+        }
+      },
+      "ReturnResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "returnedAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["completed"]
+          },
+          "returnedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

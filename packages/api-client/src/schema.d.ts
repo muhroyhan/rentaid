@@ -761,6 +761,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/vendor/orders/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The owning vendor confirms return of an order being rented; rental dates remain reserved. */
+        post: operations["returnOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1010,6 +1027,8 @@ export interface components {
             createdAt: string;
             /** Format: int64 */
             refundAmount?: number;
+            /** Format: date-time */
+            returnedAt?: string;
         };
         QuoteChanged: {
             /** @enum {string} */
@@ -1066,6 +1085,8 @@ export interface components {
             /** Format: int64 */
             refundAmount: number;
             storeName: string;
+            /** Format: date-time */
+            returnedAt?: string;
         };
         Cancellation: {
             /** Format: uuid */
@@ -1084,6 +1105,14 @@ export interface components {
             id: string;
             /** @enum {string} */
             status: "renting" | "completed";
+        };
+        ReturnResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "completed";
+            /** Format: date-time */
+            returnedAt: string;
         };
     };
     responses: never;
@@ -3229,6 +3258,48 @@ export interface operations {
                 };
             };
             /** @description Order status or date does not allow handover */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderConflict"];
+                };
+            };
+            /** @description Request failed */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    returnOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-CSRF-Token"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Return recorded or already completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResult"];
+                };
+            };
+            /** @description Order status does not allow return */
             409: {
                 headers: {
                     [name: string]: unknown;
