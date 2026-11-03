@@ -24,6 +24,7 @@ services:
     environment:
       APP_ENV: local
       HTTP_ADDR: 0.0.0.0:8080
+      PAYMENT_SIMULATOR_ENABLED: "true"
       MEDIA_DIR: /var/lib/rentaid/media
       DATABASE_URL: postgres://rentaid:rentaid_local@postgres:5432/rentaid?sslmode=disable
       ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081

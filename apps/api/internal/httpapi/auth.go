@@ -16,9 +16,10 @@ const sessionCookie = "rentaid_session"
 const loginCSRFCookie = "rentaid_login_csrf"
 
 type AuthConfig struct {
-	SecureCookies  bool
-	AllowedOrigins []string
-	Limiter        *auth.Limiter
+	PaymentSimulatorEnabled bool
+	SecureCookies           bool
+	AllowedOrigins          []string
+	Limiter                 *auth.Limiter
 }
 type loginRequest struct {
 	Email    string `json:"email"`
