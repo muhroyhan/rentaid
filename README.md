@@ -142,3 +142,11 @@ API `GET /api/v1/products/{id}/quote` menerima parameter `start_date`, `end_date
 Pengguna yang sudah masuk dan mengisi nomor telepon dapat melanjutkan penawaran ke checkout. Server memeriksa kembali harga dan ketersediaan, membuat pesanan `pending_payment`, dan menahan stok selama 15 menit. Detail pesanan menampilkan batas waktu dalam zona Asia/Jakarta. Pembayaran simulasi baru tersedia pada Phase 12; pembersihan status hold kedaluwarsa dilakukan pada Phase 13, tetapi hold kedaluwarsa sudah diabaikan dalam perhitungan stok.
 
 `POST /api/v1/checkout` memerlukan sesi pengguna, `Idempotency-Key`, parameter penawaran, `expectedTotal`, dan `expectedAvailable`. Respons 409 `quote_changed` memuat penawaran terbaru tanpa membuat pesanan. Kunci dengan payload yang sama mengembalikan hasil tersimpan selama 24 jam; payload berbeda ditolak. Endpoint `GET /api/v1/orders/{id}` hanya dapat dibaca pemilik pesanan. Gunakan database demo terpisah dan tetapkan `E2E_WEB_URL` serta `CHROME_PATH`, lalu jalankan `pnpm test:checkout`; test membuat akun dan pesanan.
+
+## Phase 12 - Pembayaran simulasi
+
+Halaman pesanan menyediakan pilihan simulasi berhasil, gagal, dan kedaluwarsa. Ini simulasi lokal dan tidak memindahkan uang. Hasil berhasil mengonfirmasi pesanan; gagal atau kedaluwarsa melepaskan stok. Pembayaran setelah batas hold ditolak dan pesanan menjadi kedaluwarsa. Daftar pesanan vendor menampilkan pesanan tokonya, sedangkan admin dapat membuka daftar dan detail transaksi.
+
+Aktifkan simulator dengan `PAYMENT_SIMULATOR_ENABLED=true`; jika variabel tidak bernilai `true`, API menolak simulasi. Konfigurasi Compose lokal mengaktifkannya. `POST /api/v1/payment-simulator` hanya menerima pemilik pesanan, memerlukan `Idempotency-Key`, serta memakai jumlah yang tersimpan pada pesanan. Retry dengan kunci dan data yang sama mengembalikan hasil yang sama selama 24 jam. Endpoint admin `/api/v1/admin/payments` dan vendor `/api/v1/vendor/orders` mendukung `page` dan `page_size`.
+
+Untuk uji browser, gunakan database demo terpisah dengan seed admin dan demo serta simulator aktif. Tetapkan `E2E_WEB_URL`, `E2E_ADMIN_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_VENDOR_PASSWORD`, dan `CHROME_PATH`, lalu jalankan `pnpm test:payment`. Test membuat akun, pesanan, dan transaksi.

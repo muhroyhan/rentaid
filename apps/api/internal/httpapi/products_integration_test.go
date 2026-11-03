@@ -89,7 +89,7 @@ func TestProductsIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `INSERT INTO categories(name,created_at,updated_at) VALUES('Kamera',$1,$1) RETURNING id::text`, clk.Now()).Scan(&categoryID); err != nil {
 		t.Fatal(err)
 	}
-	cfg := AuthConfig{Limiter: &auth.Limiter{Clock: clk, Max: 5, Window: time.Minute}}
+	cfg := AuthConfig{PaymentSimulatorEnabled: true, Limiter: &auth.Limiter{Clock: clk, Max: 5, Window: time.Minute}}
 	pages := &content.Service{Pool: pool, Clock: clk, Dir: t.TempDir()}
 	handler, err := NewWithContent(pool, slog.New(slog.NewTextHandler(io.Discard, nil)), svc, cfg, pages)
 	if err != nil {
@@ -211,6 +211,54 @@ func TestProductsIntegration(t *testing.T) {
 	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, token, nil); response.Code != 404 {
 		t.Fatalf("other order: %d %s", response.Code, response.Body)
 	}
+	paymentCall := func(token, key, outcome string) *httptest.ResponseRecorder {
+		t.Helper()
+		data, e := json.Marshal(map[string]string{"orderId": checkoutOrder.ID, "outcome": outcome})
+		if e != nil {
+			t.Fatal(e)
+		}
+		req := httptest.NewRequest("POST", "/api/v1/payment-simulator", bytes.NewReader(data))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Idempotency-Key", key)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		return response
+	}
+	if response := paymentCall(token, "other", "succeeded"); response.Code != 404 {
+		t.Fatalf("other user payment: %d %s", response.Code, response.Body)
+	}
+	paid := paymentCall(otherToken, "success", "succeeded")
+	if paid.Code != 200 || !strings.Contains(paid.Body.String(), `"amount":200000`) {
+		t.Fatalf("payment: %d %s", paid.Code, paid.Body)
+	}
+	var paymentRecord struct {
+		ID string `json:"id"`
+	}
+	if err = json.Unmarshal(paid.Body.Bytes(), &paymentRecord); err != nil {
+		t.Fatal(err)
+	}
+	if response := paymentCall(otherToken, "success", "succeeded"); response.Code != 200 || !strings.Contains(response.Body.String(), paymentRecord.ID) {
+		t.Fatalf("payment replay: %d %s", response.Code, response.Body)
+	}
+	if response := paymentCall(otherToken, "second", "failed"); response.Code != 409 || !strings.Contains(response.Body.String(), `"currentStatus":"confirmed"`) {
+		t.Fatalf("payment conflict: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/payments", admin, nil); response.Code != 200 || !strings.Contains(response.Body.String(), paymentRecord.ID) {
+		t.Fatalf("admin list: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/payments/"+paymentRecord.ID, admin, nil); response.Code != 200 {
+		t.Fatalf("admin detail: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/admin/payments", token, nil); response.Code != 403 {
+		t.Fatalf("vendor admin access: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/vendor/orders", token, nil); response.Code != 200 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
+		t.Fatalf("vendor orders: %d %s", response.Code, response.Body)
+	}
+	if response := call("GET", "/api/v1/vendor/orders", otherToken, nil); response.Code != 200 || strings.Contains(response.Body.String(), checkoutOrder.ID) {
+		t.Fatalf("other vendor orders: %d %s", response.Code, response.Body)
+	}
 	if rec = call("GET", "/api/v1/media/"+photo.ID, "", nil); rec.Code != 200 {
 		t.Fatalf("published photo: %d", rec.Code)
 	}
@@ -331,6 +379,9 @@ func TestProductsIntegration(t *testing.T) {
 	}
 	if _, err = pool.Exec(ctx, `UPDATE stores SET status='suspended' WHERE id=$1`, storeID); err != nil {
 		t.Fatal(err)
+	}
+	if response := call("GET", "/api/v1/vendor/orders", token, nil); response.Code != 200 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
+		t.Fatalf("suspended vendor orders: %d %s", response.Code, response.Body)
 	}
 	if rec = call("GET", "/api/v1/products", "", nil); rec.Code != 200 || strings.Contains(rec.Body.String(), p.ID) {
 		t.Fatalf("suspended listed: %d %s", rec.Code, rec.Body)

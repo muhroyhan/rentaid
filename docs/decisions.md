@@ -61,3 +61,9 @@
 
 - Checkout mengunci toko lalu produk dalam urutan yang sama dengan operasi vendor; perhitungan stok dan penyimpanan pesanan berada dalam satu transaksi. Penurunan stok vendor memeriksa pemakaian puncak tanggal saat ini dan mendatang, sementara arsip atau pembatalan publikasi tidak mengubah snapshot pesanan.
 - Kunci idempotensi diserialisasi per pengguna dan endpoint melalui advisory lock PostgreSQL; respons yang diproses disimpan selama 24 jam. Browser mempertahankan kunci untuk retry jika respons jaringan tidak diterima. Kode pesanan memakai 40 bit acak heksadesimal dan constraint unik database.
+
+## Phase 12 - Pembayaran simulasi
+
+- Simulator dinonaktifkan secara default di API dan diaktifkan eksplisit pada Compose lokal. Setiap pesanan memiliki paling banyak satu catatan pembayaran; nilai pembayaran diambil dari snapshot total, dan perubahan status serta riwayat disimpan dalam transaksi yang mengunci pesanan.
+- Permintaan setelah hold berakhir mengubah pesanan menjadi `expired` dan mengembalikan 409 tanpa membuat transaksi pembayaran. Hasil simulasi kedaluwarsa yang dipilih saat hold masih aktif membuat catatan simulasi `expired`. Kedua jalur melepaskan stok; pembersihan berkala tetap dikerjakan pada Phase 13.
+- Daftar vendor difilter berdasarkan kepemilikan toko dan tetap dapat dilihat saat toko ditangguhkan. Daftar dan detail pembayaran admin tidak dapat diakses akun pengguna.

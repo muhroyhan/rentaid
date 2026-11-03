@@ -1440,3 +1440,41 @@ button:disabled {
   font-size: 22px;
   color: var(--green);
 }
+.payment-simulator {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding-top: 8px;
+}
+.payment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.payment-actions button,
+.vendor-orders button {
+  padding: 10px;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  background: white;
+  color: var(--green);
+  cursor: pointer;
+}
+.payment-actions button:first-child {
+  background: var(--green);
+  color: white;
+}
+.payment-actions button:disabled,
+.vendor-orders button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.vendor-orders {
+  margin: 24px 0;
+}
+.vendor-orders li {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.vendor-orders p {
+  color: var(--muted);
+}

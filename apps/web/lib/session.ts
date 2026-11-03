@@ -35,3 +35,10 @@ export async function getDashboard(): Promise<{
   if (!response.ok) return { store: null, unavailable: true };
   return { store: (await response.json()) as Store, unavailable: false };
 }
+export async function getOwnStore(): Promise<Store | null> {
+  const response = await authenticatedFetch("/api/v1/store");
+  if (!response || response.status === 401 || response.status === 404)
+    return null;
+  if (!response.ok) throw new Error("Informasi toko belum tersedia.");
+  return (await response.json()) as Store;
+}
