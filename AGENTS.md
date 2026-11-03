@@ -76,7 +76,7 @@
 
 ### Ketersediaan dan hold stok
 
-- Ketersediaan dihitung per produk per tanggal. Dalam satu transaksi, kunci baris produk (`SELECT ... FOR UPDATE`), hitung pemakaian per tanggal (pesanan `confirmed`, `renting`, dan `pending_payment` dengan hold yang belum kedaluwarsa menurut `Clock`), lalu pastikan pemakaian ditambah kuantitas baru tidak melebihi stok pada setiap tanggal rentang. Perubahan stok produk mengunci baris yang sama. Jangan menjumlahkan secara naif semua pesanan yang beririsan dengan rentang jika pemakaiannya terjadi pada tanggal berbeda.
+- Ketersediaan dihitung per produk per tanggal. Dalam satu transaksi, kunci baris produk (`SELECT ... FOR UPDATE`), hitung pemakaian per tanggal (pesanan `confirmed`, `renting`, `completed` sepanjang tanggal sewanya, dan `pending_payment` dengan hold yang belum kedaluwarsa menurut `Clock`), lalu pastikan pemakaian ditambah kuantitas baru tidak melebihi stok pada setiap tanggal rentang. Perubahan stok produk mengunci baris yang sama. Jangan menjumlahkan secara naif semua pesanan yang beririsan dengan rentang jika pemakaiannya terjadi pada tanggal berbeda.
 - Tahan stok selama 15 menit saat menunggu pembayaran. Abaikan hold yang sudah kedaluwarsa saat menghitung ketersediaan; jalankan pekerjaan berkala dalam proses Go untuk merapikan statusnya. Satu instance API adalah asumsi MVP.
 
 ### Status pesanan
@@ -143,7 +143,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 12 Checkout ke pembayaran mock dan order terkonfirmasi - simulator, idempotensi, batas hold, status pesanan, transaksi admin, pesanan vendor, dan uji PostgreSQL/browser lulus.
 - [x] 13 Pesanan belum diserahkan ke pembatalan dan refund - pembersihan hold, pembatalan lintas peran, refund idempoten, konkurensi, restart, dan uji PostgreSQL/browser lulus.
 - [x] 14 Order terkonfirmasi ke barang diserahkan - otorisasi vendor, tanggal Jakarta, audit, idempotensi, konflik pembatalan, privasi kontak, dan uji PostgreSQL/browser lulus.
-- [ ] 15 Barang disewa ke pengembalian dan order selesai
+- [x] 15 Barang disewa ke pengembalian dan order selesai - konfirmasi vendor, waktu dan riwayat idempoten, pengembalian terlambat, stok tanggal akhir, dan uji PostgreSQL/browser lulus.
 - [ ] 16 Riwayat dan detail pesanan lintas peran
 - [ ] 17 Paket demo web yang dapat diulang
 - [ ] Gate B
@@ -182,4 +182,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:payment`: uji simulasi pembayaran, pesanan vendor, dan transaksi admin melalui browser pada database demo terpisah.
 - `pnpm test:cancellation`: uji pembatalan penyewa, vendor, admin, dan hasil refund melalui browser pada database demo terpisah.
 - `pnpm test:handover`: uji serah terima vendor dan status penyewa/admin melalui browser pada database demo terpisah.
+- `pnpm test:return`: uji pengembalian vendor, status penyewa/admin, dan stok inklusif melalui browser pada database demo terpisah.
 - Build Android belum tersedia; tambahkan perintah saat phase terkait selesai.

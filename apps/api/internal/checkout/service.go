@@ -35,21 +35,22 @@ type Input struct {
 	ExpectedAvailable int32  `json:"expectedAvailable"`
 }
 type Order struct {
-	ID           string    `json:"id"`
-	OrderCode    string    `json:"orderCode"`
-	ProductID    string    `json:"productId"`
-	ProductName  string    `json:"productName"`
-	StoreName    string    `json:"storeName"`
-	StoreAddress string    `json:"storeAddress"`
-	StartDate    string    `json:"startDate"`
-	EndDate      string    `json:"endDate"`
-	Quantity     int32     `json:"quantity"`
-	DailyPrice   int64     `json:"dailyPrice"`
-	Total        int64     `json:"total"`
-	RefundAmount int64     `json:"refundAmount"`
-	Status       string    `json:"status"`
-	HoldUntil    time.Time `json:"holdUntil"`
-	CreatedAt    time.Time `json:"createdAt"`
+	ID           string     `json:"id"`
+	OrderCode    string     `json:"orderCode"`
+	ProductID    string     `json:"productId"`
+	ProductName  string     `json:"productName"`
+	StoreName    string     `json:"storeName"`
+	StoreAddress string     `json:"storeAddress"`
+	StartDate    string     `json:"startDate"`
+	EndDate      string     `json:"endDate"`
+	Quantity     int32      `json:"quantity"`
+	DailyPrice   int64      `json:"dailyPrice"`
+	Total        int64      `json:"total"`
+	RefundAmount int64      `json:"refundAmount"`
+	ReturnedAt   *time.Time `json:"returnedAt,omitempty"`
+	Status       string     `json:"status"`
+	HoldUntil    time.Time  `json:"holdUntil"`
+	CreatedAt    time.Time  `json:"createdAt"`
 }
 type Result struct {
 	Status int
@@ -167,7 +168,7 @@ func (s *Service) Create(ctx context.Context, user, key string, in Input) (Resul
 		return reject(400, "invalid_checkout", "Data checkout tidak valid.")
 	}
 	var used int64
-	err = tx.QueryRow(ctx, `SELECT COALESCE(MAX(used),0) FROM (SELECT d.day,COALESCE(SUM(o.quantity),0) AS used FROM generate_series($2::date::timestamp,$3::date::timestamp,interval '1 day') d(day) LEFT JOIN orders o ON o.product_id=$1 AND o.start_date<=d.day::date AND o.end_date>=d.day::date AND (o.status IN ('confirmed','renting') OR (o.status='pending_payment' AND o.hold_until>$4)) GROUP BY d.day) usage`, in.ProductID, a, b, now).Scan(&used)
+	err = tx.QueryRow(ctx, `SELECT COALESCE(MAX(used),0) FROM (SELECT d.day,COALESCE(SUM(o.quantity),0) AS used FROM generate_series($2::date::timestamp,$3::date::timestamp,interval '1 day') d(day) LEFT JOIN orders o ON o.product_id=$1 AND o.start_date<=d.day::date AND o.end_date>=d.day::date AND (o.status IN ('confirmed','renting','completed') OR (o.status='pending_payment' AND o.hold_until>$4)) GROUP BY d.day) usage`, in.ProductID, a, b, now).Scan(&used)
 	if err != nil {
 		return Result{}, err
 	}
@@ -210,7 +211,7 @@ func equal(a, b []byte) bool { return string(a) == string(b) }
 func (s *Service) Get(ctx context.Context, user, id string) (Order, error) {
 	var o Order
 	var a, b time.Time
-	err := s.Pool.QueryRow(ctx, `SELECT id::text,order_code,product_id::text,product_name,store_name,store_address,start_date,end_date,quantity,daily_price,total,status,hold_until,created_at,COALESCE((SELECT r.amount FROM refunds r JOIN payments p ON p.id=r.payment_id WHERE p.order_id=orders.id),0) FROM orders WHERE id=$1 AND user_id=$2`, id, user).Scan(&o.ID, &o.OrderCode, &o.ProductID, &o.ProductName, &o.StoreName, &o.StoreAddress, &a, &b, &o.Quantity, &o.DailyPrice, &o.Total, &o.Status, &o.HoldUntil, &o.CreatedAt, &o.RefundAmount)
+	err := s.Pool.QueryRow(ctx, `SELECT id::text,order_code,product_id::text,product_name,store_name,store_address,start_date,end_date,quantity,daily_price,total,status,hold_until,created_at,COALESCE((SELECT r.amount FROM refunds r JOIN payments p ON p.id=r.payment_id WHERE p.order_id=orders.id),0),returned_at FROM orders WHERE id=$1 AND user_id=$2`, id, user).Scan(&o.ID, &o.OrderCode, &o.ProductID, &o.ProductName, &o.StoreName, &o.StoreAddress, &a, &b, &o.Quantity, &o.DailyPrice, &o.Total, &o.Status, &o.HoldUntil, &o.CreatedAt, &o.RefundAmount, &o.ReturnedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Order{}, ErrNotFound
 	}

@@ -7,9 +7,40 @@ import (
 	"rentaid.local/api/internal/auth"
 	"rentaid.local/api/internal/order"
 	"rentaid.local/api/internal/payment"
+	"time"
 )
 
 func registerOrderActions(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig, svc *order.Service, views *payment.Service) {
+	mux.HandleFunc("POST /api/v1/vendor/orders/{id}/return", func(w http.ResponseWriter, r *http.Request) {
+		session, ok := requireUser(w, r, accounts, cfg)
+		if !ok {
+			return
+		}
+		id := r.PathValue("id")
+		if !productUUID.MatchString(id) {
+			errorJSON(w, 400, "invalid_request", "Permintaan tidak valid.")
+			return
+		}
+		returned, err := svc.Return(r.Context(), id, session.User.ID)
+		var conflict *order.Conflict
+		switch {
+		case errors.Is(err, order.ErrNotFound):
+			errorJSON(w, 404, "not_found", "Pesanan tidak ditemukan.")
+			return
+		case errors.As(err, &conflict):
+			writeJSON(w, 409, map[string]string{"code": "order_conflict", "message": "Status pesanan tidak memungkinkan pengembalian.", "currentStatus": conflict.Status})
+			return
+		case err != nil:
+			errorJSON(w, 500, "internal_error", "Layanan tidak tersedia.")
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, 200, struct {
+			ID         string    `json:"id"`
+			Status     string    `json:"status"`
+			ReturnedAt time.Time `json:"returnedAt"`
+		}{id, "completed", returned})
+	})
 	mux.HandleFunc("POST /api/v1/vendor/orders/{id}/handover", func(w http.ResponseWriter, r *http.Request) {
 		session, ok := requireUser(w, r, accounts, cfg)
 		if !ok {

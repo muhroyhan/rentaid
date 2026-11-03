@@ -126,7 +126,7 @@ func TestPaymentsIntegration(t *testing.T) {
 	if err != nil || len(otherItems) != 0 {
 		t.Fatalf("vendor isolation: %+v %v", otherItems, err)
 	}
-	if _, err = pool.Exec(ctx, `UPDATE orders SET status='completed' WHERE id=$1`, order); err != nil {
+	if _, err = pool.Exec(ctx, `UPDATE orders SET status='cancelled' WHERE id=$1`, order); err != nil {
 		t.Fatal(err)
 	}
 	for _, outcome := range []string{"failed", "expired"} {

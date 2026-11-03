@@ -163,3 +163,43 @@ func (s *Service) Handover(ctx context.Context, id, actor string) (string, error
 	}
 	return "renting", nil
 }
+
+// Return records the vendor's confirmation without changing the reserved rental dates.
+func (s *Service) Return(ctx context.Context, id, actor string) (time.Time, error) {
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var state string
+	var returned *time.Time
+	err = tx.QueryRow(ctx, `SELECT o.status,o.returned_at FROM orders o JOIN products p ON p.id=o.product_id JOIN stores st ON st.id=p.store_id WHERE o.id=$1 AND st.owner_id=$2 FOR UPDATE OF o`, id, actor).Scan(&state, &returned)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, ErrNotFound
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	if state == "completed" && returned != nil {
+		return *returned, nil
+	}
+	if state != "renting" {
+		return time.Time{}, &Conflict{Status: state}
+	}
+	now := s.Clock.Now().UTC()
+	var saved time.Time
+	err = tx.QueryRow(ctx, `UPDATE orders SET status='completed',returned_at=$2 WHERE id=$1 AND status='renting' RETURNING returned_at`, id, now).Scan(&saved)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, errors.New("order changed while locked")
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,actor_id,created_at) VALUES($1,'renting','completed',$2,$3)`, id, actor, saved); err != nil {
+		return time.Time{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return time.Time{}, err
+	}
+	return saved, nil
+}

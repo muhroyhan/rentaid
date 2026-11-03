@@ -164,3 +164,9 @@ Jalankan `pnpm test:cancellation` dengan variabel browser dan database demo terp
 Vendor pemilik toko dapat mengonfirmasi serah terima pesanan yang sudah terbayar pada tanggal mulai sampai tanggal selesai sewa, secara inklusif menurut waktu Asia/Jakarta. Status berubah menjadi `renting` dan terlihat sebagai **Sedang disewa** oleh vendor, penyewa, dan admin. Pengulangan konfirmasi tidak membuat riwayat baru. Pesanan yang sudah diserahkan tidak dapat dibatalkan; proses pengembalian dilanjutkan pada Phase 15.
 
 `POST /api/v1/vendor/orders/{id}/handover` memerlukan sesi vendor pemilik toko dan CSRF untuk browser. Status yang tidak sesuai atau tanggal di luar masa sewa menghasilkan 409. Gunakan database demo terpisah dengan simulator aktif dan variabel browser seperti Phase 12, lalu jalankan `pnpm test:handover`. Test membuat akun, pesanan, pembayaran, dan serah terima.
+
+## Phase 15 - Pengembalian barang
+
+Vendor pemilik toko dapat mengonfirmasi pengembalian untuk pesanan yang sedang disewa. Pesanan menjadi selesai, dan waktu pengembalian serta aktor tercatat. Pengembalian terlambat tetap dapat dikonfirmasi tanpa denda. Jika barang dikembalikan lebih awal, stok tetap terpakai sampai tanggal akhir sewa secara inklusif.
+
+`POST /api/v1/vendor/orders/{id}/return` memerlukan sesi vendor pemilik toko dan CSRF untuk browser. Pengulangan setelah berhasil mengembalikan waktu pengembalian yang sama tanpa menambah riwayat. Gunakan database demo terpisah dengan simulator aktif dan variabel browser seperti Phase 12, lalu jalankan `pnpm test:return`; test membuat akun dan pesanan serta memakai stok produk demo.

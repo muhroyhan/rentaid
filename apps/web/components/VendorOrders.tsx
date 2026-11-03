@@ -23,6 +23,7 @@ export function VendorOrders() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [handoverBusy, setHandoverBusy] = useState("");
+  const [returnBusy, setReturnBusy] = useState("");
   const load = useCallback(async () => {
     try {
       const result = await api.GET("/api/v1/vendor/orders", {
@@ -64,6 +65,33 @@ export function VendorOrders() {
       setHandoverBusy("");
     }
   }
+  async function confirmReturn(id: string) {
+    if (returnBusy) return;
+    setReturnBusy(id);
+    setError("");
+    try {
+      const session = await api.GET("/api/v1/auth/session", {
+        cache: "no-store",
+      });
+      if (!session.data) {
+        setError("Silakan masuk kembali.");
+        return;
+      }
+      const result = await api.POST("/api/v1/vendor/orders/{id}/return", {
+        params: { path: { id } },
+        headers: { "X-CSRF-Token": session.data.csrfToken },
+      });
+      if (!result.data) {
+        setError(result.error?.message ?? "Pengembalian tidak berhasil.");
+        return;
+      }
+      await load();
+    } catch {
+      setError("Pengembalian tidak berhasil. Coba lagi.");
+    } finally {
+      setReturnBusy("");
+    }
+  }
   useEffect(() => {
     void load();
   }, [load]);
@@ -89,6 +117,34 @@ export function VendorOrders() {
                 {currency.format(item.total)}
               </p>
               <p>Status: {labels[item.status]}</p>
+              {item.returnedAt && (
+                <p>
+                  Dikembalikan:{" "}
+                  {new Intl.DateTimeFormat("id-ID", {
+                    dateStyle: "long",
+                    timeStyle: "short",
+                    timeZone: "Asia/Jakarta",
+                  }).format(new Date(item.returnedAt))}{" "}
+                  WIB
+                </p>
+              )}
+              {item.status === "renting" && (
+                <div>
+                  <p>
+                    Pengembalian awal tidak membebaskan stok sebelum akhir
+                    tanggal sewa.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={returnBusy !== ""}
+                    onClick={() => void confirmReturn(item.id)}
+                  >
+                    {returnBusy === item.id
+                      ? "Memproses..."
+                      : "Konfirmasi pengembalian"}
+                  </button>
+                </div>
+              )}{" "}
               {item.refundAmount > 0 && (
                 <p>
                   Refund simulasi berhasil: {currency.format(item.refundAmount)}
