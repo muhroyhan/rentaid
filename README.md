@@ -150,3 +150,11 @@ Halaman pesanan menyediakan pilihan simulasi berhasil, gagal, dan kedaluwarsa. I
 Aktifkan simulator dengan `PAYMENT_SIMULATOR_ENABLED=true`; jika variabel tidak bernilai `true`, API menolak simulasi. Konfigurasi Compose lokal mengaktifkannya. `POST /api/v1/payment-simulator` hanya menerima pemilik pesanan, memerlukan `Idempotency-Key`, serta memakai jumlah yang tersimpan pada pesanan. Retry dengan kunci dan data yang sama mengembalikan hasil yang sama selama 24 jam. Endpoint admin `/api/v1/admin/payments` dan vendor `/api/v1/vendor/orders` mendukung `page` dan `page_size`.
 
 Untuk uji browser, gunakan database demo terpisah dengan seed admin dan demo serta simulator aktif. Tetapkan `E2E_WEB_URL`, `E2E_ADMIN_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_VENDOR_PASSWORD`, dan `CHROME_PATH`, lalu jalankan `pnpm test:payment`. Test membuat akun, pesanan, dan transaksi.
+
+## Phase 13 - Pembatalan dan refund
+
+Penyewa, vendor toko terkait, dan admin dapat membatalkan pesanan sebelum serah terima. Pembatalan pesanan yang masih menunggu pembayaran melepas hold tanpa refund; pembatalan pesanan terkonfirmasi menghasilkan refund simulasi penuh. Refund tercatat sekali dan dapat dilihat pada pesanan. Admin juga dapat membatalkan pesanan terkonfirmasi yang sudah melewati tanggal sewa. Pesanan yang sudah diserahkan tidak dapat dibatalkan.
+
+`POST /api/v1/orders/{id}/cancel` menerima `expectedStatus` (`pending_payment` atau `confirmed`) dan memerlukan sesi serta CSRF untuk browser. Pengulangan pembatalan mengembalikan hasil yang sama; jika status berubah sebelum pembatalan, API mengembalikan 409 dengan status saat ini. Pekerja API memeriksa hold saat dimulai dan setiap menit; hold yang sudah kedaluwarsa diabaikan dalam perhitungan stok meskipun belum dirapikan.
+
+Jalankan `pnpm test:cancellation` dengan variabel browser dan database demo terpisah seperti Phase 12. Test membuat akun, pesanan, pembayaran simulasi, dan refund.

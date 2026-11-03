@@ -67,3 +67,9 @@
 - Simulator dinonaktifkan secara default di API dan diaktifkan eksplisit pada Compose lokal. Setiap pesanan memiliki paling banyak satu catatan pembayaran; nilai pembayaran diambil dari snapshot total, dan perubahan status serta riwayat disimpan dalam transaksi yang mengunci pesanan.
 - Permintaan setelah hold berakhir mengubah pesanan menjadi `expired` dan mengembalikan 409 tanpa membuat transaksi pembayaran. Hasil simulasi kedaluwarsa yang dipilih saat hold masih aktif membuat catatan simulasi `expired`. Kedua jalur melepaskan stok; pembersihan berkala tetap dikerjakan pada Phase 13.
 - Daftar vendor difilter berdasarkan kepemilikan toko dan tetap dapat dilihat saat toko ditangguhkan. Daftar dan detail pembayaran admin tidak dapat diakses akun pengguna.
+
+## Phase 13 - Pembatalan dan refund
+
+- Pembatalan memerlukan status yang terakhir dilihat klien dan mengunci baris pesanan yang sama dengan simulator pembayaran. Jika status berubah sebelum kunci diperoleh, API mengembalikan 409; pengulangan pesanan yang sudah dibatalkan mengembalikan hasil refund tersimpan.
+- Refund simulasi penuh dibuat dalam transaksi pembatalan untuk pembayaran sukses, dengan constraint unik pada pembayaran. Pembersih hold berjalan saat API dimulai dan setiap menit, memakai `Clock`, batch 200, serta penguncian `SKIP LOCKED` agar aman terhadap tindakan pada pesanan yang sama.
+- Properti `refundAmount` pada kontrak detail pesanan bersifat opsional untuk mendukung respons checkout lama yang masih tersimpan sebagai hasil idempotensi. Respons detail yang baru menyertakan nilai nol atau jumlah refund.
