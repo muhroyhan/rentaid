@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { components } from "@rentaid/api-client";
 import { api } from "../lib/api";
+import { CancelOrderButton } from "./CancelOrderButton";
 type Order = components["schemas"]["VendorOrder"];
 const currency = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -21,29 +22,23 @@ export function VendorOrders() {
   const [items, setItems] = useState<Order[]>([]);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const result = await api.GET("/api/v1/vendor/orders", {
-          params: { query: { page, page_size: 20 } },
-          cache: "no-store",
-        });
-        if (active) {
-          if (result.data) {
-            setItems(result.data);
-            setError("");
-          } else
-            setError(result.error?.message ?? "Pesanan tidak dapat dimuat.");
-        }
-      } catch {
-        if (active) setError("Pesanan tidak dapat dimuat.");
-      }
-    })();
-    return () => {
-      active = false;
-    };
+  const load = useCallback(async () => {
+    try {
+      const result = await api.GET("/api/v1/vendor/orders", {
+        params: { query: { page, page_size: 20 } },
+        cache: "no-store",
+      });
+      if (result.data) {
+        setItems(result.data);
+        setError("");
+      } else setError(result.error?.message ?? "Pesanan tidak dapat dimuat.");
+    } catch {
+      setError("Pesanan tidak dapat dimuat.");
+    }
   }, [page]);
+  useEffect(() => {
+    void load();
+  }, [load]);
   return (
     <section className="surface vendor-orders" aria-label="Pesanan masuk">
       <span className="eyebrow">PESANAN MASUK</span>
@@ -66,6 +61,19 @@ export function VendorOrders() {
                 {currency.format(item.total)}
               </p>
               <p>Status: {labels[item.status]}</p>
+              {item.refundAmount > 0 && (
+                <p>
+                  Refund simulasi berhasil: {currency.format(item.refundAmount)}
+                </p>
+              )}
+              {(item.status === "pending_payment" ||
+                item.status === "confirmed") && (
+                <CancelOrderButton
+                  id={item.id}
+                  status={item.status}
+                  onChanged={() => void load()}
+                />
+              )}
             </li>
           ))}
         </ul>
