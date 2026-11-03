@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { getSession } from "../lib/session";
+import { homeContent, products } from "../lib/catalog";
+import { ProductCard } from "../components/ProductCard";
 export default async function Home() {
-  const session = await getSession();
+  const [content, featured] = await Promise.all([
+    homeContent(),
+    products({ page: 1, pageSize: 4 }),
+  ]);
   return (
     <main>
       <section className="hero section-width">
@@ -10,19 +14,27 @@ export default async function Home() {
             <span className="eyebrow-dot" /> UNTUK SETIAP RENCANA ANDA
           </span>
           <h1>
-            Ada banyak cara <em>untuk memulai.</em>
+            {content.value ? (
+              content.value.title
+            ) : (
+              <>
+                Ada banyak cara <em>untuk memulai.</em>
+              </>
+            )}
           </h1>
-          <p>
-            Hal-hal baik tidak selalu harus dimiliki. Temukan kemudahan menyewa
-            dan bagikan yang Anda punya, di satu tempat.
+          <p className="content-copy">
+            {content.value
+              ? content.value.body
+              : "Hal-hal baik tidak selalu harus dimiliki. Temukan kemudahan menyewa dan bagikan yang Anda punya, di satu tempat."}
           </p>
+          {content.error && (
+            <p className="home-content-error" role="status">
+              Konten beranda belum dapat dimuat.
+            </p>
+          )}
           <div className="hero-actions">
-            <Link
-              className="button button-dark"
-              href={session ? "/akun" : "/daftar"}
-            >
-              {session ? "Lihat akun saya" : "Mulai bersama Rentaid"}{" "}
-              <span>↗</span>
+            <Link className="button button-dark" href="/katalog">
+              Jelajahi katalog <span>↗</span>
             </Link>
             <Link className="inline-link" href="/toko">
               Punya barang untuk disewakan? <span>↗</span>
@@ -37,32 +49,76 @@ export default async function Home() {
             </span>
           </div>
         </div>
-        <div className="hero-visual" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="visual-card">
-            <span className="card-overline">LEBIH BANYAK KEMUNGKINAN</span>
-            <div className="visual-object">
-              <span>✳</span>
-            </div>
-            <div className="card-bottom">
-              <strong>
-                Sewa yang
-                <br />
-                terasa mudah.
-              </strong>
-              <span>01 / 03</span>
-            </div>
+        {content.value?.imageId ? (
+          <div className="hero-visual hero-cms-image">
+            <img
+              src={`/api/v1/media/${content.value.imageId}`}
+              alt="Gambar beranda"
+            />
           </div>
-          <div className="float-tag">
-            <span>✦</span>
-            <div>
-              <strong>Punya rencana?</strong>
-              <small>Ada cara yang lebih ringan.</small>
+        ) : (
+          <div className="hero-visual" aria-hidden="true">
+            <div className="orbit orbit-one" />
+            <div className="orbit orbit-two" />
+            <div className="visual-card">
+              <span className="card-overline">LEBIH BANYAK KEMUNGKINAN</span>
+              <div className="visual-object">
+                <span>✳</span>
+              </div>
+              <div className="card-bottom">
+                <strong>
+                  Sewa yang
+                  <br />
+                  terasa mudah.
+                </strong>
+                <span>01 / 03</span>
+              </div>
             </div>
+            <div className="float-tag">
+              <span>✦</span>
+              <div>
+                <strong>Punya rencana?</strong>
+                <small>Ada cara yang lebih ringan.</small>
+              </div>
+            </div>
+            <span className="visual-number">01 — 03</span>
           </div>
-          <span className="visual-number">01 — 03</span>
+        )}
+      </section>
+      <section
+        className="section-width featured-section"
+        aria-label="Pilihan produk"
+      >
+        <div className="catalog-heading">
+          <div>
+            <span className="eyebrow">PILIHAN UNTUK ANDA</span>
+            <h2>
+              Temukan yang <em>Anda butuhkan.</em>
+            </h2>
+            <p>Mulai dari hal kecil untuk rencana besar Anda.</p>
+          </div>
+          <Link className="inline-link" href="/katalog">
+            Lihat semua produk <span>↗</span>
+          </Link>
         </div>
+        {featured.error ? (
+          <div className="catalog-state" role="status">
+            <p>Produk belum dapat dimuat. Coba lagi sebentar.</p>
+            <Link href="/katalog" className="inline-link">
+              Buka katalog ↗
+            </Link>
+          </div>
+        ) : featured.value.length ? (
+          <div className="catalog-grid">
+            {featured.value.map((item) => (
+              <ProductCard key={item.id} product={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="catalog-state">
+            <p>Belum ada produk yang tersedia saat ini.</p>
+          </div>
+        )}
       </section>
       <section className="intro-strip">
         <div className="section-width strip-inner">
