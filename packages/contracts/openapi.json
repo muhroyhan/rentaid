@@ -2497,6 +2497,73 @@
         },
         "summary": "Get approved vendor dashboard"
       }
+    },
+    "/api/v1/products/{id}/quote": {
+      "get": {
+        "operationId": "getProductQuote",
+        "description": "Calculate a read-only quote without reserving stock. Dates use Asia/Jakarta.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "quantity",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Invalid dates, unavailable stock, or request failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3111,6 +3178,57 @@
             "items": {
               "$ref": "#/components/schemas/ProductDecision"
             }
+          }
+        }
+      },
+      "Quote": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "productId",
+          "startDate",
+          "endDate",
+          "days",
+          "quantity",
+          "dailyPrice",
+          "available",
+          "total"
+        ],
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dailyPrice": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "available": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
           }
         }
       }
