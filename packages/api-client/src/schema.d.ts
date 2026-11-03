@@ -712,6 +712,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAdminOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -959,6 +991,8 @@ export interface components {
             holdUntil: string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: int64 */
+            refundAmount?: number;
         };
         QuoteChanged: {
             /** @enum {string} */
@@ -1012,6 +1046,21 @@ export interface components {
             status: "pending_payment" | "confirmed" | "renting" | "completed" | "cancelled" | "expired" | "payment_failed";
             /** Format: date-time */
             createdAt: string;
+            /** Format: int64 */
+            refundAmount: number;
+            storeName: string;
+        };
+        Cancellation: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "cancelled";
+            /** Format: int64 */
+            refundAmount: number;
+        };
+        CancelInput: {
+            /** @enum {string} */
+            expectedStatus: "pending_payment" | "confirmed";
         };
     };
     responses: never;
@@ -3037,6 +3086,84 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Orders for vendor store */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorOrder"][];
+                };
+            };
+            /** @description Request failed */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-CSRF-Token"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelInput"];
+            };
+        };
+        responses: {
+            /** @description Order cancelled or already cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cancellation"];
+                };
+            };
+            /** @description Order status changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderConflict"];
+                };
+            };
+            /** @description Request failed */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminOrders: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Orders */
             200: {
                 headers: {
                     [name: string]: unknown;

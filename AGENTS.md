@@ -141,7 +141,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 10 Detail produk ke penawaran harga - tanggal inklusif, ketersediaan per tanggal dan hold, kontrak API, ringkasan web, integrasi PostgreSQL, dan browser teruji tanpa menahan stok.
 - [x] 11 Penawaran harga ke checkout dengan hold stok - transaksi stok, idempotensi, snapshot, validasi ulang penawaran, aturan stok vendor, arsip, dan uji PostgreSQL/browser lulus.
 - [x] 12 Checkout ke pembayaran mock dan order terkonfirmasi - simulator, idempotensi, batas hold, status pesanan, transaksi admin, pesanan vendor, dan uji PostgreSQL/browser lulus.
-- [ ] 13 Pesanan belum diserahkan ke pembatalan dan refund
+- [x] 13 Pesanan belum diserahkan ke pembatalan dan refund - pembersihan hold, pembatalan lintas peran, refund idempoten, konkurensi, restart, dan uji PostgreSQL/browser lulus.
 - [ ] 14 Order terkonfirmasi ke barang diserahkan
 - [ ] 15 Barang disewa ke pengembalian dan order selesai
 - [ ] 16 Riwayat dan detail pesanan lintas peran
@@ -180,4 +180,5 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:product-quote`: uji formulir dan ringkasan penawaran di browser dengan database demo terpisah.
 - `pnpm test:checkout`: uji checkout dan halaman menunggu pembayaran di browser dengan database demo terpisah.
 - `pnpm test:payment`: uji simulasi pembayaran, pesanan vendor, dan transaksi admin melalui browser pada database demo terpisah.
+- `pnpm test:cancellation`: uji pembatalan penyewa, vendor, admin, dan hasil refund melalui browser pada database demo terpisah.
 - Build Android belum tersedia; tambahkan perintah saat phase terkait selesai.

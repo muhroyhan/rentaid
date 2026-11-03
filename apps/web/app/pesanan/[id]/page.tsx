@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { components } from "@rentaid/api-client";
 import { api } from "../../../lib/api";
+import { CancelOrderButton } from "../../../components/CancelOrderButton";
 type Order = components["schemas"]["Order"];
 type Outcome = components["schemas"]["PaymentInput"]["outcome"];
 const currency = new Intl.NumberFormat("id-ID", {
@@ -50,6 +51,18 @@ export default function OrderPage() {
       active = false;
     };
   }, [id]);
+  async function refreshOrder() {
+    try {
+      const latest = await api.GET("/api/v1/orders/{id}", {
+        params: { path: { id } },
+        cache: "no-store",
+      });
+      if (latest.data) setOrder(latest.data);
+      else setMessage("Pesanan tidak dapat dimuat ulang.");
+    } catch {
+      setMessage("Pesanan tidak dapat dimuat ulang.");
+    }
+  }
   async function simulate(outcome: Outcome) {
     if (busy) return;
     setBusy(true);
@@ -138,6 +151,27 @@ export default function OrderPage() {
             {order.startDate} — {order.endDate} · {order.quantity} barang
           </p>
           <strong>Total {currency.format(order.total)}</strong>
+          {(order.refundAmount ?? 0) > 0 && (
+            <p>
+              Refund simulasi berhasil:{" "}
+              {currency.format(order.refundAmount ?? 0)}
+            </p>
+          )}
+          {(order.status === "pending_payment" ||
+            order.status === "confirmed") && (
+            <div className="payment-simulator">
+              <p>
+                {order.status === "confirmed"
+                  ? "Pembatalan akan menghasilkan refund simulasi penuh."
+                  : "Pembatalan akan melepas stok yang ditahan."}
+              </p>
+              <CancelOrderButton
+                id={order.id}
+                status={order.status}
+                onChanged={() => void refreshOrder()}
+              />
+            </div>
+          )}
           {notice && <p role="status">{notice}</p>}
           {order.status === "pending_payment" && (
             <div className="payment-simulator">

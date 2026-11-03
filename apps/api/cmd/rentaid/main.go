@@ -20,6 +20,7 @@ import (
 	"rentaid.local/api/internal/database"
 	"rentaid.local/api/internal/demo"
 	"rentaid.local/api/internal/httpapi"
+	"rentaid.local/api/internal/order"
 )
 
 func value(name, fallback string) string {
@@ -89,6 +90,13 @@ func run(ctx context.Context, args []string, logger *slog.Logger) error {
 		return fmt.Errorf("listen: %w", err)
 	}
 	serverError := make(chan error, 1)
+	workerCtx, stopWorker := context.WithCancel(ctx)
+	workerDone := make(chan struct{})
+	go func() {
+		defer close(workerDone)
+		expireHolds(workerCtx, &order.Service{Pool: pool, Clock: clk}, logger)
+	}()
+	defer func() { stopWorker(); <-workerDone }()
 	go func() { serverError <- server.Serve(listener) }()
 	logger.Info("server started", "address", listener.Addr().String())
 	select {
@@ -109,6 +117,33 @@ func run(ctx context.Context, args []string, logger *slog.Logger) error {
 	return nil
 }
 
+func expireHolds(ctx context.Context, service *order.Service, logger *slog.Logger) {
+	run := func() {
+		for {
+			count, err := service.ExpireDue(ctx)
+			if err != nil {
+				if ctx.Err() == nil {
+					logger.Error("hold cleanup failed")
+				}
+				return
+			}
+			if count < 200 {
+				return
+			}
+		}
+	}
+	run()
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			run()
+		}
+	}
+}
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

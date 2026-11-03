@@ -6,6 +6,7 @@ import { CategoryManagement } from "./CategoryManagement";
 import { UserManagement } from "./UserManagement";
 import { StoreManagement } from "./StoreManagement";
 import { PaymentManagement } from "./PaymentManagement";
+import { OrderManagement } from "./OrderManagement";
 
 const api = createApiClient(window.location.origin);
 
@@ -143,6 +144,12 @@ export function App() {
             <div className="alert" role="alert">
               {error}
             </div>
+          )}
+          {session.csrfToken && (
+            <OrderManagement
+              csrfToken={session.csrfToken}
+              onExpired={expireSession}
+            />
           )}
           <PaymentManagement onExpired={expireSession} />
           {session.csrfToken && (

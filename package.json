@@ -35,7 +35,8 @@
     "test:catalog-errors": "node scripts/test-catalog-errors.mjs",
     "test:product-quote": "node scripts/test-product-quote.mjs",
     "test:checkout": "node scripts/test-checkout.mjs",
-    "test:payment": "node scripts/test-payment.mjs"
+    "test:payment": "node scripts/test-payment.mjs",
+    "test:cancellation": "node scripts/test-cancellation.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

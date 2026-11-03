@@ -2933,6 +2933,136 @@
           }
         }
       }
+    },
+    "/api/v1/orders/{id}/cancel": {
+      "post": {
+        "operationId": "cancelOrder",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order cancelled or already cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cancellation"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Order status changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderConflict"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "operationId": "listAdminOrders",
+        "security": [
+          {
+            "SessionCookie": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendorOrder"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3722,6 +3852,11 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "refundAmount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },
@@ -3843,7 +3978,9 @@
           "quantity",
           "total",
           "status",
-          "createdAt"
+          "createdAt",
+          "refundAmount",
+          "storeName"
         ],
         "properties": {
           "id": {
@@ -3894,6 +4031,45 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "refundAmount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "storeName": {
+            "type": "string"
+          }
+        }
+      },
+      "Cancellation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "refundAmount"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["cancelled"]
+          },
+          "refundAmount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "CancelInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expectedStatus"],
+        "properties": {
+          "expectedStatus": {
+            "type": "string",
+            "enum": ["pending_payment", "confirmed"]
           }
         }
       }
