@@ -44,7 +44,8 @@
     "demo:down": "node scripts/demo.mjs down",
     "demo:seed": "node scripts/demo.mjs seed",
     "demo:backup": "node scripts/demo.mjs backup",
-    "demo:restore": "node scripts/demo.mjs restore"
+    "demo:restore": "node scripts/demo.mjs restore",
+    "test:demo": "node scripts/test-demo.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
