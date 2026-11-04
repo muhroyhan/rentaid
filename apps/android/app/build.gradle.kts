@@ -45,6 +45,7 @@ android {
 
 ktlint {
     filter {
+        exclude("**/id/rentaid/client/**")
         exclude { element ->
             element.file.toPath().toAbsolutePath().normalize()
                 .startsWith(rootProject.file("generated").toPath().toAbsolutePath().normalize())
@@ -62,7 +63,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("com.google.code.gson:gson:2.12.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
