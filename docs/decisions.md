@@ -98,3 +98,8 @@
 
 - Gradle 8.11.1, JDK Temurin 17.0.20.1, Android Gradle Plugin 8.9.3, Kotlin 2.1.20, dan Android SDK 35 dipilih agar build dapat diulang. Kotlin client dihasilkan menggunakan OpenAPI Generator 7.13.0 dengan OkHttp dan Gson; kontrak API tetap satu sumber.
 - Layar awal memeriksa endpoint health untuk membuktikan komunikasi tanpa mendahului fitur katalog Phase 20. URL debug default menuju gateway Compose melalui `10.0.2.2:8081`; perangkat USB dapat memakai `adb reverse`.
+## Phase 19 - Akun Android
+
+- Token bearer dienkripsi dengan AES-GCM memakai kunci Android Keystore dan disimpan di preferensi privat; backup aplikasi dinonaktifkan. Password hanya disimpan dalam memori untuk input dan tidak ditulis ke log.
+- Sesi dipulihkan dengan memeriksa profil pada API. Respons 401 menghapus token dan meminta login kembali; kegagalan jaringan mempertahankan token agar pengguna dapat mencoba lagi. Logout memerlukan respons server agar pencabutan sesi dapat dipastikan.
+- Test end-to-end akun menggunakan API dan database lokal terpisah karena registrasi membuat data baru.

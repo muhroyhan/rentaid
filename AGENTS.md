@@ -148,7 +148,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 17 Paket demo web yang dapat diulang - Compose sehat, seed berulang, alur lengkap, gagal/batal/refund, restart, dan backup/restore database/media pada project kosong teruji.
 - [x] Gate B - marketplace web, vendor, dan admin menyelesaikan alur MVP melalui satu origin Compose; paket demo dan pemulihan teruji tanpa layanan eksternal saat runtime.
 - [x] 18 Toolchain Android ke aplikasi terhubung API - build debug/release, sinkronisasi OpenAPI, unit test, serta instalasi dan empat test koneksi pada emulator dan perangkat USB lulus.
-- [ ] 19 Pengguna Android ke sesi dan profil
+- [x] 19 Pengguna Android ke sesi dan profil - registrasi/login, profil, logout dan pencabutan, pemulihan dan enkripsi Keystore, kedaluwarsa/suspend, serta test PostgreSQL dan emulator teruji; API dan Keystore juga teruji pada perangkat USB.
 - [ ] 20 Katalog Android ke detail produk
 - [ ] 21 Detail Android ke checkout dengan hold
 - [ ] 22 Checkout Android ke pembayaran dan order terkonfirmasi

@@ -56,6 +56,30 @@ APK debug tersedia di `apps/android/app/build/outputs/apk/debug/app-debug.apk`. 
 
 Jalankan `pnpm android:generate` setelah mengubah kontrak OpenAPI dan commit klien yang diperbarui. Generator menggunakan image Docker OpenAPI Generator 7.13.0; `pnpm android:client-check` memeriksa kecocokan hasilnya. Dengan API lokal aktif dan satu emulator terhubung, jalankan test perangkat melalui `cd apps/android; .\gradlew.bat connectedDebugAndroidTest`. Untuk perangkat USB gunakan `adb reverse` seperti di atas dan tambahkan `-PapiBaseUrl=http://127.0.0.1:8081` pada perintah test.
 
+## Phase 19 — Akun Android
+
+Pilih **Akun dan profil** untuk mendaftar, masuk, mengubah nama dan nomor telepon, atau keluar. Token sesi dienkripsi menggunakan Android Keystore dan dipulihkan setelah aplikasi dibuka kembali. Jika koneksi terputus, coba lagi; logout memerlukan koneksi agar server dapat mencabut sesi. Sesi kedaluwarsa atau akun yang ditangguhkan meminta pengguna masuk kembali.
+
+Test instrumentasi akun membuat pengguna baru, sehingga gunakan database test terpisah. Contoh PowerShell berikut menggunakan PostgreSQL Compose dan satu perangkat USB:
+
+```powershell
+docker compose -f infra/compose.yaml exec -T postgres psql -U rentaid -d postgres -c 'CREATE DATABASE rentaid_android_test'
+docker run -d --name rentaid-android-test-api --network rentaid_default -p 127.0.0.1:18081:8080 -e APP_ENV=local -e HTTP_ADDR=0.0.0.0:8080 -e 'DATABASE_URL=postgres://rentaid:rentaid_local@postgres:5432/rentaid_android_test?sslmode=disable' rentaid-api /bin/sh -c '/app/rentaid migrate && exec /app/rentaid serve'
+adb reverse tcp:18081 tcp:18081
+cd apps/android
+.\gradlew.bat connectedDebugAndroidTest -PapiBaseUrl=http://127.0.0.1:18081
+```
+
+Untuk emulator, gunakan alamat `http://10.0.2.2:18081`. Test API Go terhadap PostgreSQL terpisah dapat dijalankan dengan `TEST_DATABASE_URL` yang menunjuk database test dan `pnpm test`. Kembali ke root workspace setelah menjalankan Gradle.
+
+Untuk menguji pemulihan sesi lintas proses setelah paket test terpasang, jalankan perintah berikut dengan satu perangkat aktif dan API test tetap berjalan. Tahap pertama membuat sesi; tahap kedua memverifikasi sesi setelah aplikasi dihentikan, kemudian logout:
+
+```powershell
+adb shell am instrument -w -e sessionPhase prepare -e class 'id.rentaid.app.SessionProcessTest#prepareSession' id.rentaid.app.test/androidx.test.runner.AndroidJUnitRunner
+adb shell am force-stop id.rentaid.app
+adb shell am instrument -w -e sessionPhase restore -e class 'id.rentaid.app.SessionProcessTest#restoreSession' id.rentaid.app.test/androidx.test.runner.AndroidJUnitRunner
+```
+
 ## Phase 02 — Admin dan autentikasi
 
 Seed memerlukan email admin dan password minimal 12 karakter melalui environment. Seed tidak mengubah password admin yang sudah ada dan menolak berjalan pada `APP_ENV=production`.
