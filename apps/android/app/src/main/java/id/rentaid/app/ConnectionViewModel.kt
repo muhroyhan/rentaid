@@ -10,7 +10,9 @@ import kotlinx.coroutines.launch
 
 sealed interface ConnectionState {
     data object Loading : ConnectionState
+
     data class Connected(val status: String) : ConnectionState
+
     data object Unavailable : ConnectionState
 }
 
@@ -28,13 +30,14 @@ class ConnectionViewModel(private val repository: ConnectionRepository) : ViewMo
         started = true
         mutableState.value = ConnectionState.Loading
         viewModelScope.launch {
-            mutableState.value = try {
-                ConnectionState.Connected(repository.check())
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Exception) {
-                ConnectionState.Unavailable
-            }
+            mutableState.value =
+                try {
+                    ConnectionState.Connected(repository.check())
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    ConnectionState.Unavailable
+                }
         }
     }
 

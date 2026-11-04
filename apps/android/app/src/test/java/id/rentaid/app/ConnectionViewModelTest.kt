@@ -1,6 +1,5 @@
 package id.rentaid.app
 
-import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -12,6 +11,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConnectionViewModelTest {
@@ -28,22 +28,24 @@ class ConnectionViewModelTest {
     }
 
     @Test
-    fun failureShowsErrorAndRetryReadsApi() = runTest(dispatcher) {
-        var available = false
-        val repository = object : ConnectionRepository {
-            override suspend fun check(): String {
-                if (!available) throw IOException("offline")
-                return "ok"
-            }
+    fun failureShowsErrorAndRetryReadsApi() =
+        runTest(dispatcher) {
+            var available = false
+            val repository =
+                object : ConnectionRepository {
+                    override suspend fun check(): String {
+                        if (!available) throw IOException("offline")
+                        return "ok"
+                    }
+                }
+            val model = ConnectionViewModel(repository)
+            assertEquals(ConnectionState.Loading, model.state.value)
+            advanceUntilIdle()
+            assertEquals(ConnectionState.Unavailable, model.state.value)
+            available = true
+            model.refresh()
+            assertEquals(ConnectionState.Loading, model.state.value)
+            advanceUntilIdle()
+            assertEquals(ConnectionState.Connected("ok"), model.state.value)
         }
-        val model = ConnectionViewModel(repository)
-        assertEquals(ConnectionState.Loading, model.state.value)
-        advanceUntilIdle()
-        assertEquals(ConnectionState.Unavailable, model.state.value)
-        available = true
-        model.refresh()
-        assertEquals(ConnectionState.Loading, model.state.value)
-        advanceUntilIdle()
-        assertEquals(ConnectionState.Connected("ok"), model.state.value)
-    }
 }

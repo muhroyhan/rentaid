@@ -30,7 +30,10 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"https://localhost\"")
         }
     }
-    buildFeatures { compose = true; buildConfig = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -40,7 +43,14 @@ android {
     packaging { resources.excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1") }
 }
 
-ktlint { filter { exclude("**/generated/**") } }
+ktlint {
+    filter {
+        exclude { element ->
+            element.file.toPath().toAbsolutePath().normalize()
+                .startsWith(rootProject.file("generated").toPath().toAbsolutePath().normalize())
+        }
+    }
+}
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.04.01"))

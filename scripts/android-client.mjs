@@ -32,7 +32,6 @@ const generator = spawnSync(
     "apis,models,supportingFiles",
     "--additional-properties",
     "packageName=id.rentaid.client,library=jvm-okhttp4,serializationLibrary=gson,dateLibrary=java8,enumPropertyNaming=original",
-    "--skip-validate-spec",
   ],
   { stdio: "inherit" },
 );

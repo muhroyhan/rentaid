@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package id.rentaid.app
 
 import android.os.Bundle
@@ -57,7 +59,11 @@ fun RentaidApp(repository: ConnectionRepository) {
 }
 
 @Composable
-fun ConnectionScreen(state: ConnectionState, onRetry: () -> Unit, onBack: () -> Unit) {
+fun ConnectionScreen(
+    state: ConnectionState,
+    onRetry: () -> Unit,
+    onBack: () -> Unit,
+) {
     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Koneksi API", style = MaterialTheme.typography.headlineMedium)
         when (state) {
