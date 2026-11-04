@@ -42,7 +42,19 @@ pnpm api:build
 
 Untuk menjalankan test integrasi database, buat database khusus test menggunakan `docker compose -f infra/compose.yaml exec postgres psql -U rentaid -d postgres -c "CREATE DATABASE rentaid_test"`, tetapkan `$env:TEST_DATABASE_URL` ke URL PostgreSQL database tersebut pada port 5432, lalu jalankan `pnpm test`. Test integrasi dilewati jika variabel itu tidak tersedia. Seed membuat setting demo dan akun admin dari environment, serta menolak `APP_ENV=production`.
 
-Aplikasi Android dan perintah build-nya belum tersedia pada phase ini.
+## Android: toolchain dan koneksi lokal
+
+Gunakan JDK Temurin 17.0.20.1, Android SDK Platform 35 dan Build Tools 35.0.0. Atur `JAVA_HOME` dan `ANDROID_HOME` ke instalasi masing-masing. Gradle Wrapper 8.11.1 mengunduh distribusi yang telah diverifikasi checksum pada build pertama.
+
+```powershell
+pnpm android:client-check
+pnpm android:check
+pnpm android:build
+```
+
+APK debug tersedia di `apps/android/app/build/outputs/apk/debug/app-debug.apk`. Jalankan `pnpm app:up`, lalu pasang APK dengan `adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk`. Buka Rentaid dan pilih **Periksa koneksi**. Emulator menggunakan `http://10.0.2.2:8081` secara default. Untuk perangkat USB, jalankan `adb reverse tcp:8081 tcp:8081`, kemudian build dengan `cd apps/android; .\gradlew.bat assembleDebug -PapiBaseUrl=http://127.0.0.1:8081`. Untuk alamat LAN, jalankan API pada alamat yang dapat dijangkau perangkat dan gunakan alamat tersebut dengan `-PapiBaseUrl`. Gateway Compose default hanya mendengarkan localhost, sehingga tidak langsung dapat diakses lewat LAN. HTTP hanya diizinkan dalam build debug; alamat HTTPS localhost pada release adalah placeholder sampai alamat deployment ditentukan.
+
+Jalankan `pnpm android:generate` setelah mengubah kontrak OpenAPI dan commit klien yang diperbarui. Generator menggunakan image Docker OpenAPI Generator 7.13.0; `pnpm android:client-check` memeriksa kecocokan hasilnya. Dengan API lokal aktif dan satu emulator terhubung, jalankan test perangkat melalui `cd apps/android; .\gradlew.bat connectedDebugAndroidTest`. Untuk perangkat USB gunakan `adb reverse` seperti di atas dan tambahkan `-PapiBaseUrl=http://127.0.0.1:8081` pada perintah test.
 
 ## Phase 02 — Admin dan autentikasi
 

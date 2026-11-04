@@ -34,6 +34,8 @@ for (const path of ["apps", "packages", "infra", "tests"]) {
   }
 }
 const commands = [
+  ["pnpm", ["android:client-check"]],
+  ["pnpm", ["android:check"]],
   ["pnpm", ["contracts:check"]],
   ["pnpm", ["test:catalog-errors"]],
   ["pnpm", ["--filter", "@rentaid/api-client", "typecheck"]],

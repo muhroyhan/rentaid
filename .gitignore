@@ -12,3 +12,7 @@ node_modules/
 
 **/*.tsbuildinfo
 apps/web/next-env.d.ts
+apps/android/local.properties
+apps/android/generated/*
+!apps/android/generated/src/
+apps/android/generated/src/test/
