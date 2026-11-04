@@ -29,10 +29,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val repository = ApiConnectionRepository(DefaultApi(BuildConfig.API_BASE_URL))
+        val accounts = ApiAccountRepository(BuildConfig.API_BASE_URL, KeystoreSessionStore(applicationContext))
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    RentaidApp(repository)
+                    RentaidApp(repository, accounts)
                 }
             }
         }
@@ -40,14 +41,26 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun RentaidApp(repository: ConnectionRepository) {
+fun RentaidApp(
+    repository: ConnectionRepository,
+    accounts: AccountRepository? = null,
+) {
     val navigation = rememberNavController()
     NavHost(navController = navigation, startDestination = "home") {
         composable("home") {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("Rentaid", style = MaterialTheme.typography.headlineMedium)
                 Text("Selamat datang di Rentaid.")
+                if (accounts != null) {
+                    Button(onClick = { navigation.navigate("account") }) { Text("Akun dan profil") }
+                }
                 Button(onClick = { navigation.navigate("connection") }) { Text("Periksa koneksi") }
+            }
+        }
+        composable("account") {
+            if (accounts != null) {
+                val model: AccountViewModel = viewModel(factory = AccountViewModel.Factory(accounts))
+                AccountScreen(model, onBack = { navigation.popBackStack() })
             }
         }
         composable("connection") {
