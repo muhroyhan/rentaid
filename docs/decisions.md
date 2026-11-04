@@ -103,3 +103,9 @@
 - Token bearer dienkripsi dengan AES-GCM memakai kunci Android Keystore dan disimpan di preferensi privat; backup aplikasi dinonaktifkan. Password hanya disimpan dalam memori untuk input dan tidak ditulis ke log.
 - Sesi dipulihkan dengan memeriksa profil pada API. Respons 401 menghapus token dan meminta login kembali; kegagalan jaringan mempertahankan token agar pengguna dapat mencoba lagi. Logout memerlukan respons server agar pencabutan sesi dapat dipastikan.
 - Test end-to-end akun menggunakan API dan database lokal terpisah karena registrasi membuat data baru.
+
+## Phase 20 - Katalog Android
+
+- Katalog, kategori, detail, dan konten CMS diambil melalui klien Kotlin hasil generate; publikasi dan visibilitas tetap diputuskan API. Pagination meminta 20 produk per halaman dan menghapus duplikasi berdasarkan ID; pencarian dan perubahan kategori memulai halaman pertama kembali.
+- Foto dimuat dari endpoint media publik dengan batas unduhan 5 MB dan ukuran decode maksimal sekitar 1024 piksel per sisi. Gambar gagal ditampilkan sebagai pesan tanpa menghentikan aplikasi.
+- Pengujian memakai database terpisah dengan fixture produk terbit, produk nonpublik, halaman CMS, dan media yang gagal dimuat.

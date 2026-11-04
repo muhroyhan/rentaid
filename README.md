@@ -54,23 +54,29 @@ pnpm android:build
 
 APK debug tersedia di `apps/android/app/build/outputs/apk/debug/app-debug.apk`. Jalankan `pnpm app:up`, lalu pasang APK dengan `adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk`. Buka Rentaid dan pilih **Periksa koneksi**. Emulator menggunakan `http://10.0.2.2:8081` secara default. Untuk perangkat USB, jalankan `adb reverse tcp:8081 tcp:8081`, kemudian build dengan `cd apps/android; .\gradlew.bat assembleDebug -PapiBaseUrl=http://127.0.0.1:8081`. Untuk alamat LAN, jalankan API pada alamat yang dapat dijangkau perangkat dan gunakan alamat tersebut dengan `-PapiBaseUrl`. Gateway Compose default hanya mendengarkan localhost, sehingga tidak langsung dapat diakses lewat LAN. HTTP hanya diizinkan dalam build debug; alamat HTTPS localhost pada release adalah placeholder sampai alamat deployment ditentukan.
 
-Jalankan `pnpm android:generate` setelah mengubah kontrak OpenAPI dan commit klien yang diperbarui. Generator menggunakan image Docker OpenAPI Generator 7.13.0; `pnpm android:client-check` memeriksa kecocokan hasilnya. Dengan API lokal aktif dan satu emulator terhubung, jalankan test perangkat melalui `cd apps/android; .\gradlew.bat connectedDebugAndroidTest`. Untuk perangkat USB gunakan `adb reverse` seperti di atas dan tambahkan `-PapiBaseUrl=http://127.0.0.1:8081` pada perintah test.
+Jalankan `pnpm android:generate` setelah mengubah kontrak OpenAPI dan commit klien yang diperbarui. Generator menggunakan image Docker OpenAPI Generator 7.13.0; `pnpm android:client-check` memeriksa kecocokan hasilnya. Test instrumentasi membuat data dan memerlukan fixture katalog; gunakan database terpisah seperti petunjuk berikut.
 
 ## Phase 19 — Akun Android
 
 Pilih **Akun dan profil** untuk mendaftar, masuk, mengubah nama dan nomor telepon, atau keluar. Token sesi dienkripsi menggunakan Android Keystore dan dipulihkan setelah aplikasi dibuka kembali. Jika koneksi terputus, coba lagi; logout memerlukan koneksi agar server dapat mencabut sesi. Sesi kedaluwarsa atau akun yang ditangguhkan meminta pengguna masuk kembali.
 
-Test instrumentasi akun membuat pengguna baru, sehingga gunakan database test terpisah. Contoh PowerShell berikut menggunakan PostgreSQL Compose dan satu perangkat USB:
+## Phase 20 — Katalog Android dan test perangkat
+
+Beranda menampilkan konten CMS yang telah diterbitkan. Pilih **Lihat katalog** untuk mencari produk, menyaring kategori, membuka halaman berikutnya, dan melihat detail serta foto produk. Konten FAQ, tentang, syarat, dan privasi dapat dibuka dari beranda. Foto yang gagal dimuat menampilkan pesan tanpa menghentikan aplikasi.
+
+Test instrumentasi akun dan katalog membuat data, sehingga gunakan database test baru yang terpisah. Contoh PowerShell berikut menggunakan PostgreSQL Compose, image `rentaid-api` yang sudah dibangun, dan satu perangkat USB:
 
 ```powershell
 docker compose -f infra/compose.yaml exec -T postgres psql -U rentaid -d postgres -c 'CREATE DATABASE rentaid_android_test'
-docker run -d --name rentaid-android-test-api --network rentaid_default -p 127.0.0.1:18081:8080 -e APP_ENV=local -e HTTP_ADDR=0.0.0.0:8080 -e 'DATABASE_URL=postgres://rentaid:rentaid_local@postgres:5432/rentaid_android_test?sslmode=disable' rentaid-api /bin/sh -c '/app/rentaid migrate && exec /app/rentaid serve'
-adb reverse tcp:18081 tcp:18081
+docker run -d --name rentaid-android-test-api --network rentaid_default -p 127.0.0.1:18082:8080 -e APP_ENV=local -e HTTP_ADDR=0.0.0.0:8080 -e 'DATABASE_URL=postgres://rentaid:rentaid_local@postgres:5432/rentaid_android_test?sslmode=disable' -e SEED_ADMIN_EMAIL=admin@example.test -e SEED_ADMIN_PASSWORD=Phase20-test-password! -e SEED_DEMO_PASSWORD=Phase20-test-password! rentaid-api /bin/sh -c '/app/rentaid migrate && /app/rentaid seed && exec /app/rentaid serve'
+# Tunggu http://127.0.0.1:18082/api/v1/ready mengembalikan status ok.
+Get-Content -Raw tests/android/phase20-fixtures.sql | docker compose -f infra/compose.yaml exec -T postgres psql -v ON_ERROR_STOP=1 -U rentaid -d rentaid_android_test
+adb reverse tcp:18082 tcp:18082
 cd apps/android
-.\gradlew.bat connectedDebugAndroidTest -PapiBaseUrl=http://127.0.0.1:18081
+.\gradlew.bat connectedDebugAndroidTest -PapiBaseUrl=http://127.0.0.1:18082
 ```
 
-Untuk emulator, gunakan alamat `http://10.0.2.2:18081`. Test API Go terhadap PostgreSQL terpisah dapat dijalankan dengan `TEST_DATABASE_URL` yang menunjuk database test dan `pnpm test`. Kembali ke root workspace setelah menjalankan Gradle.
+Untuk emulator, gunakan alamat `http://10.0.2.2:18082`. Fixture membuat produk dan konten publik serta satu produk nonpublik dan foto yang sengaja gagal dimuat; jalankan sekali pada database baru. Test API Go terhadap PostgreSQL terpisah dapat dijalankan dengan `TEST_DATABASE_URL` yang menunjuk database test dan `pnpm test`. Kembali ke root workspace setelah menjalankan Gradle.
 
 Untuk menguji pemulihan sesi lintas proses setelah paket test terpasang, jalankan perintah berikut dengan satu perangkat aktif dan API test tetap berjalan. Tahap pertama membuat sesi; tahap kedua memverifikasi sesi setelah aplikasi dihentikan, kemudian logout:
 
