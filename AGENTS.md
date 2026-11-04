@@ -147,7 +147,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 16 Riwayat dan detail pesanan lintas peran - detail pembayaran/refund dan riwayat aktor, filter status, pagination, otorisasi, serta uji PostgreSQL/browser lulus.
 - [x] 17 Paket demo web yang dapat diulang - Compose sehat, seed berulang, alur lengkap, gagal/batal/refund, restart, dan backup/restore database/media pada project kosong teruji.
 - [x] Gate B - marketplace web, vendor, dan admin menyelesaikan alur MVP melalui satu origin Compose; paket demo dan pemulihan teruji tanpa layanan eksternal saat runtime.
-- [ ] 18 Toolchain Android ke aplikasi terhubung API
+- [x] 18 Toolchain Android ke aplikasi terhubung API - build debug/release, sinkronisasi OpenAPI, unit test, serta instalasi dan empat test koneksi pada emulator dan perangkat USB lulus.
 - [ ] 19 Pengguna Android ke sesi dan profil
 - [ ] 20 Katalog Android ke detail produk
 - [ ] 21 Detail Android ke checkout dengan hold
@@ -165,6 +165,8 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm db:migrate` / `pnpm db:seed`: jalankan migrasi / seed lokal idempoten; seed memerlukan `SEED_ADMIN_EMAIL` dan `SEED_ADMIN_PASSWORD`.
 - `pnpm api:dev` / `pnpm api:build`: jalankan API / build executable ke `.artifacts/`.
 - `pnpm contracts:generate` / `pnpm contracts:check`: generate / periksa sinkronisasi OpenAPI dan klien TypeScript.
+- `pnpm android:generate` / `pnpm android:client-check`: generate / periksa klien Kotlin dari OpenAPI menggunakan Docker.
+- `pnpm android:build` / `pnpm android:check`: build APK debug / jalankan ktlint, unit test, dan build Android debug serta release; JDK 17 dan Android SDK 35 diperlukan.
 - `pnpm check`: pemeriksaan merek, kontrak, TypeScript, ESLint, Prettier, gofmt, go vet, golangci-lint via Docker, dan test Go.
 - `pnpm test`: test Go melalui Docker; tetapkan `TEST_DATABASE_URL` untuk menjalankan test integrasi PostgreSQL.
 - `pnpm admin:dev` / `pnpm admin:build`: jalankan panel admin Vite / build admin.

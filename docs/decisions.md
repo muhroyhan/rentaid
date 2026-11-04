@@ -94,3 +94,7 @@
 - Demo memakai Compose yang sama dengan pengembangan, dengan nama project dan port yang dapat dipilih. Gateway memiliki health check untuk API, marketplace, dan admin statis agar perintah startup menunggu seluruh jalur aplikasi siap.
 - Backup menghentikan API sementara, menyimpan dump PostgreSQL format custom serta arsip media, dan menambahkan checksum SHA-256. Restore memeriksa integritas dan menolak aplikasi target yang masih berjalan atau database/media yang sudah berisi data; tidak ada penghapusan otomatis terhadap target.
 - Pengujian demo memakai dua project Compose unik beserta port dan password acak. Alur browser membuat vendor, toko, produk bergambar, serta pesanan sampai selesai dan skenario gagal/batal/refund. Pemulihan diverifikasi lewat status pesanan, jumlah data, login, dan checksum media sebelum volume test dibersihkan.
+## Phase 18 - Fondasi Android
+
+- Gradle 8.11.1, JDK Temurin 17.0.20.1, Android Gradle Plugin 8.9.3, Kotlin 2.1.20, dan Android SDK 35 dipilih agar build dapat diulang. Kotlin client dihasilkan menggunakan OpenAPI Generator 7.13.0 dengan OkHttp dan Gson; kontrak API tetap satu sumber.
+- Layar awal memeriksa endpoint health untuk membuktikan komunikasi tanpa mendahului fitur katalog Phase 20. URL debug default menuju gateway Compose melalui `10.0.2.2:8081`; perangkat USB dapat memakai `adb reverse`.
