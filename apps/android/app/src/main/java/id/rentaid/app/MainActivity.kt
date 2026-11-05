@@ -36,10 +36,11 @@ class MainActivity : ComponentActivity() {
         val catalog = ApiCatalogRepository(DefaultApi(BuildConfig.API_BASE_URL))
         val checkout = ApiCheckoutGateway(BuildConfig.API_BASE_URL, KeystoreSessionStore(applicationContext))
         val attempts = EncryptedCheckoutAttemptStore(KeystoreSessionStore(applicationContext, "checkout_pending", clearOnInvalid = false))
+        val orders = ApiOrderRepository(BuildConfig.API_BASE_URL, KeystoreSessionStore(applicationContext))
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    RentaidApp(repository, accounts, catalog, checkout = checkout, attempts = attempts)
+                    RentaidApp(repository, accounts, catalog, checkout = checkout, attempts = attempts, orders = orders)
                 }
             }
         }
@@ -54,6 +55,7 @@ fun RentaidApp(
     baseUrl: String = BuildConfig.API_BASE_URL,
     checkout: CheckoutGateway? = null,
     attempts: CheckoutAttemptStore? = null,
+    orders: OrderRepository? = null,
 ) {
     val navigation = rememberNavController()
     NavHost(navController = navigation, startDestination = "home") {
@@ -79,6 +81,7 @@ fun RentaidApp(
                 if (accounts != null) {
                     Button(onClick = { navigation.navigate("account") }) { Text("Akun dan profil") }
                 }
+                if (orders != null) Button(onClick = { navigation.navigate("orders") }) { Text("Pesanan saya") }
                 Button(onClick = { navigation.navigate("connection") }) { Text("Periksa koneksi") }
             }
         }
@@ -128,6 +131,24 @@ fun RentaidApp(
             if (accounts != null) {
                 val model: AccountViewModel = viewModel(factory = AccountViewModel.Factory(accounts))
                 AccountScreen(model, onBack = { navigation.popBackStack() })
+            }
+        }
+        composable("orders") {
+            if (orders != null) {
+                val model: OrderListViewModel = viewModel(factory = OrderListViewModel.Factory(orders))
+                OrderListScreen(
+                    model,
+                    { navigation.navigate("orders/$it") },
+                    { navigation.navigate("account") },
+                    { navigation.popBackStack() },
+                )
+            }
+        }
+        composable("orders/{id}") { entry ->
+            val id = runCatching { UUID.fromString(entry.arguments?.getString("id")) }.getOrNull()
+            if (orders != null && id != null) {
+                val model: OrderDetailViewModel = viewModel(factory = OrderDetailViewModel.Factory(orders, id))
+                OrderDetailScreen(model, { navigation.navigate("account") }, { navigation.popBackStack() })
             }
         }
         composable("connection") {
