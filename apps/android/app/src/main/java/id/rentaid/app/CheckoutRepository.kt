@@ -8,6 +8,7 @@ import id.rentaid.client.infrastructure.Success
 import id.rentaid.client.models.Checkout409Response
 import id.rentaid.client.models.CheckoutInput
 import id.rentaid.client.models.Order
+import id.rentaid.client.models.PaymentInput
 import id.rentaid.client.models.Quote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,7 +26,10 @@ data class CheckoutAttempt(
     val startedAtServerMillis: Long,
     val origin: String,
     val orderId: UUID? = null,
+    val payment: PaymentAttempt? = null,
 )
+
+data class PaymentAttempt(val key: String, val outcome: PaymentInput.Outcome, val startedAtServerMillis: Long)
 
 data class ServerSession(val userId: UUID, val serverTime: Instant)
 
@@ -39,6 +43,14 @@ sealed interface CheckoutResult {
     data class Rejected(val code: String, val message: String) : CheckoutResult
 
     data object Unknown : CheckoutResult
+}
+
+sealed interface PaymentResult {
+    data object Completed : PaymentResult
+
+    data class Rejected(val code: String, val message: String) : PaymentResult
+
+    data object Unknown : PaymentResult
 }
 
 interface CheckoutGateway {
@@ -56,6 +68,11 @@ interface CheckoutGateway {
     suspend fun checkout(attempt: CheckoutAttempt): CheckoutResult
 
     suspend fun order(id: UUID): TimedOrder
+
+    suspend fun pay(
+        orderId: UUID,
+        attempt: PaymentAttempt,
+    ): PaymentResult = PaymentResult.Unknown
 }
 
 interface CheckoutAttemptStore {
@@ -81,7 +98,8 @@ class ApiCheckoutGateway(baseUrl: String, sessionStore: SessionStore) : Checkout
             val request = chain.request()
             val needsSession =
                 request.url.encodedPath == "/api/v1/auth/session" ||
-                    request.url.encodedPath == "/api/v1/checkout" || request.url.encodedPath.startsWith("/api/v1/orders/")
+                    request.url.encodedPath == "/api/v1/checkout" || request.url.encodedPath == "/api/v1/payment-simulator" ||
+                    request.url.encodedPath.startsWith("/api/v1/orders/")
             val token = if (needsSession) sessionStore.read() else null
             chain.proceed(if (token != null) request.newBuilder().header("Authorization", "Bearer $token").build() else request)
         }.build()
@@ -145,6 +163,26 @@ class ApiCheckoutGateway(baseUrl: String, sessionStore: SessionStore) : Checkout
                 is Success -> TimedOrder(requireNotNull(result.data), serverTime(result.headers), roundTrip)
                 is ClientError -> throw ClientException(statusCode = result.statusCode)
                 else -> throw IllegalStateException("Order unavailable")
+            }
+        }
+
+    override suspend fun pay(
+        orderId: UUID,
+        attempt: PaymentAttempt,
+    ): PaymentResult =
+        withContext(Dispatchers.IO) {
+            when (val result = api.simulatePaymentWithHttpInfo(attempt.key, PaymentInput(orderId, attempt.outcome), null)) {
+                is Success -> PaymentResult.Completed
+                is ClientError -> {
+                    val json = runCatching { com.google.gson.JsonParser.parseString(result.body as? String).asJsonObject }.getOrNull()
+                    val code = json?.get("code")?.asString
+                    if (code == null || code == "idempotency_key_reuse") {
+                        PaymentResult.Unknown
+                    } else {
+                        PaymentResult.Rejected(code, json.get("message")?.asString ?: "Pembayaran belum dapat diproses.")
+                    }
+                }
+                else -> PaymentResult.Unknown
             }
         }
 }

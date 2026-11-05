@@ -115,3 +115,9 @@
 - Penawaran, harga, ketersediaan, dan hold tetap ditentukan oleh API. Respons sesi, checkout, dan detail pesanan menyertakan header `Date` dari clock bisnis server. Android menghitung sisa hold dengan waktu monoton, dikurangi durasi perjalanan respons dan ketelitian satu detik header HTTP.
 - Upaya checkout disimpan terenkripsi sebelum dikirim, termasuk kunci idempotensi, data penawaran, akun, dan origin API. Hasil jaringan yang tidak diketahui dapat dicoba ulang dengan kunci dan data yang sama; percobaan otomatis diblokir mendekati batas idempotensi 24 jam. Data yang gagal didekripsi dipertahankan, dan upaya tidak dapat diteruskan oleh akun atau origin yang berbeda.
 - Perubahan penawaran memerlukan konfirmasi pengguna sebelum membuat upaya dan kunci baru. Pengujian perangkat memeriksa kesamaan penawaran web dan Android, pengulangan tanpa duplikasi, serta perebutan stok terakhir antara sesi web dan token Android.
+
+## Phase 22 - Pembayaran Android
+
+- Pembayaran memakai endpoint simulator dan klien Kotlin dari kontrak yang sudah ada. Pilihan berhasil, gagal, atau kedaluwarsa dijelaskan sebagai simulasi lokal; status yang ditampilkan selalu dimuat ulang dari API.
+- Kunci, hasil simulasi yang dipilih, waktu server, akun, dan origin disimpan bersama checkout terenkripsi sebelum request. Jika respons terputus, aplikasi memakai payload dan kunci yang sama; setelah batas aman 24 jam, aplikasi hanya memeriksa status dan tidak mengulang request. Detail lama disembunyikan saat sesi diperiksa kembali.
+- Tombol lanjutkan pesanan pada beranda membuka checkout tersimpan setelah aplikasi dibuka kembali. Saat layar kembali aktif, status dan upaya yang belum diketahui diperiksa melalui API; daftar riwayat tetap menjadi cakupan Phase 23.

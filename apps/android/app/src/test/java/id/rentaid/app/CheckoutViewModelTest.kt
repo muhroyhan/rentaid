@@ -3,6 +3,7 @@ package id.rentaid.app
 import id.rentaid.client.infrastructure.ClientException
 import id.rentaid.client.models.CheckoutInput
 import id.rentaid.client.models.Order
+import id.rentaid.client.models.PaymentInput
 import id.rentaid.client.models.Quote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,6 +60,9 @@ class CheckoutViewModelTest {
         var result: CheckoutResult = CheckoutResult.Unknown
         var throwNetwork = false
         var unauthenticated = false
+        val payments = mutableListOf<PaymentAttempt>()
+        var paymentResult: PaymentResult = PaymentResult.Unknown
+        var orderStatus = Order.Status.pending_payment
 
         override suspend fun session(): ServerSession {
             if (unauthenticated) throw ClientException(statusCode = 401)
@@ -72,7 +76,15 @@ class CheckoutViewModelTest {
             quantity: Int,
         ) = quote
 
-        override suspend fun order(id: UUID): TimedOrder = timedOrder(id)
+        override suspend fun order(id: UUID): TimedOrder = timedOrder(id).let { it.copy(order = it.order.copy(status = orderStatus)) }
+
+        override suspend fun pay(
+            orderId: UUID,
+            attempt: PaymentAttempt,
+        ): PaymentResult {
+            payments.add(attempt)
+            return paymentResult
+        }
 
         override suspend fun checkout(attempt: CheckoutAttempt): CheckoutResult {
             sent.add(attempt)
@@ -176,6 +188,72 @@ class CheckoutViewModelTest {
             runCurrent()
             assertTrue(gateway.sent.isEmpty())
             assertTrue(model.state.value.unresolved)
+        }
+
+    @Test
+    fun paymentRetrySurvivesRecreationAndKeepsTheSameKey() =
+        runTest(dispatcher) {
+            val gateway = FakeGateway()
+            val store = MemoryStore()
+            val id = UUID.randomUUID()
+            val input = CheckoutInput(product, start, end, 1, 300000, 2)
+            store.value = CheckoutAttempt(user, "checkout", input, now.toEpochMilli(), gateway.origin, id)
+            val model = CheckoutViewModel(product, gateway, store) { dispatcher.scheduler.currentTime }
+            runCurrent()
+            model.pay(PaymentInput.Outcome.succeeded)
+            model.pay(PaymentInput.Outcome.failed)
+            runCurrent()
+            val attempt = gateway.payments.single()
+            assertEquals(PaymentInput.Outcome.succeeded, attempt.outcome)
+            assertEquals(attempt, store.value?.payment)
+            assertFalse(model.finish())
+            gateway.paymentResult = PaymentResult.Completed
+            gateway.orderStatus = Order.Status.confirmed
+            val reopened = CheckoutViewModel(product, gateway, store) { dispatcher.scheduler.currentTime }
+            runCurrent()
+            assertEquals(attempt, gateway.payments.last())
+            assertEquals(Order.Status.confirmed, reopened.state.value.order?.order?.status)
+            assertNull(store.value?.payment)
+            assertTrue(reopened.finish())
+        }
+
+    @Test
+    fun oldPaymentKeyIsNotReplayedAndTerminalStatusIsRecovered() =
+        runTest(dispatcher) {
+            val gateway = FakeGateway()
+            val store = MemoryStore()
+            val id = UUID.randomUUID()
+            val payment = PaymentAttempt("payment", PaymentInput.Outcome.succeeded, now.toEpochMilli())
+            val input = CheckoutInput(product, start, end, 1, 300000, 2)
+            store.value = CheckoutAttempt(user, "checkout", input, now.toEpochMilli(), gateway.origin, id, payment)
+            gateway.time = now.plusMillis(CheckoutViewModel.KEY_LIFETIME_MILLIS)
+            val model = CheckoutViewModel(product, gateway, store) { dispatcher.scheduler.currentTime }
+            runCurrent()
+            assertTrue(gateway.payments.isEmpty())
+            assertEquals(payment, store.value?.payment)
+            gateway.orderStatus = Order.Status.expired
+            model.refresh()
+            runCurrent()
+            assertTrue(gateway.payments.isEmpty())
+            assertNull(store.value?.payment)
+            assertEquals(Order.Status.expired, model.state.value.order?.order?.status)
+        }
+
+    @Test
+    fun refreshHidesOrderWhenAccountChanges() =
+        runTest(dispatcher) {
+            val gateway = FakeGateway()
+            val store = MemoryStore()
+            val input = CheckoutInput(product, start, end, 1, 300000, 2)
+            store.value = CheckoutAttempt(user, "checkout", input, now.toEpochMilli(), gateway.origin, UUID.randomUUID())
+            val model = CheckoutViewModel(product, gateway, store) { dispatcher.scheduler.currentTime }
+            runCurrent()
+            assertTrue(model.state.value.order != null)
+            gateway.currentUser = UUID.randomUUID()
+            model.refresh()
+            runCurrent()
+            assertNull(model.state.value.order)
+            assertTrue(model.state.value.needsLogin)
         }
 
     @Test

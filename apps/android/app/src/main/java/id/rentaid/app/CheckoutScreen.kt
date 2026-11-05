@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -22,8 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.rentaid.client.models.Order
+import id.rentaid.client.models.PaymentInput
 import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -42,6 +47,12 @@ fun CheckoutScreen(
     onBack: () -> Unit,
 ) {
     val state by model.state.collectAsStateWithLifecycle()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, model) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) model.refresh() }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
     var start by rememberSaveable { mutableStateOf("") }
     var end by rememberSaveable { mutableStateOf("") }
     var quantity by rememberSaveable { mutableStateOf("1") }
@@ -58,7 +69,17 @@ fun CheckoutScreen(
             Text(order.productName)
             Text("${order.startDate} sampai ${order.endDate} · ${order.quantity} barang")
             Text("Total ${money(order.total)}")
-            Text("Status: ${order.status.value}")
+            val status =
+                when (order.status) {
+                    Order.Status.pending_payment -> "Menunggu pembayaran"
+                    Order.Status.confirmed -> "Pembayaran berhasil, pesanan terkonfirmasi"
+                    Order.Status.payment_failed -> "Pembayaran gagal"
+                    Order.Status.expired -> "Pesanan kedaluwarsa"
+                    Order.Status.cancelled -> "Pesanan dibatalkan"
+                    Order.Status.renting -> "Sedang disewa"
+                    Order.Status.completed -> "Pesanan selesai"
+                }
+            Text("Status: $status")
             val until =
                 order.holdUntil.atZoneSameInstant(
                     ZoneId.of("Asia/Jakarta"),
@@ -68,7 +89,18 @@ fun CheckoutScreen(
                 state.remainingSeconds?.let { Text("Sisa hold: ${it / 60} menit ${it % 60} detik") }
                 if (state.remainingSeconds == 0L) Text("Waktu hold telah habis. Status akhir ditentukan server.")
             }
-            Button(onClick = { if (model.finish()) onBack() }, enabled = !state.loading) { Text("Selesai") }
+            if (state.pending?.payment != null) {
+                Text("Hasil pembayaran sedang diperiksa. Percobaan ulang menggunakan data yang sama.")
+                Button(onClick = model::resume, enabled = !state.loading) { Text("Periksa pembayaran") }
+            } else if (order.status == Order.Status.pending_payment) {
+                Text("Pembayaran ini adalah simulasi lokal; tidak ada uang yang dipindahkan.")
+                Text("Pilih hasil simulasi pembayaran:")
+                Button(onClick = { model.pay(PaymentInput.Outcome.succeeded) }, enabled = !state.loading) { Text("Simulasikan berhasil") }
+                Button(onClick = { model.pay(PaymentInput.Outcome.failed) }, enabled = !state.loading) { Text("Simulasikan gagal") }
+                Button(onClick = { model.pay(PaymentInput.Outcome.expired) }, enabled = !state.loading) { Text("Simulasikan kedaluwarsa") }
+            } else {
+                Button(onClick = { if (model.finish()) onBack() }, enabled = !state.loading) { Text("Selesai") }
+            }
         } else if (state.unresolved) {
             Text("Selesaikan pemeriksaan checkout sebelumnya sebelum memulai checkout baru.")
             Button(onClick = model::resume, enabled = !state.loading && state.pending != null) { Text("Periksa dan coba lagi") }

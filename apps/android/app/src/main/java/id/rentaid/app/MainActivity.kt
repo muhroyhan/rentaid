@@ -61,6 +61,10 @@ fun RentaidApp(
             Column(Modifier.verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("Rentaid", style = MaterialTheme.typography.headlineMedium)
                 Text("Selamat datang di Rentaid.")
+                val pending = runCatching { attempts?.read() }.getOrNull()
+                if (checkout != null && pending != null) {
+                    Button(onClick = { navigation.navigate("checkout/${pending.input.productId}") }) { Text("Lanjutkan pesanan") }
+                }
                 if (catalog != null) {
                     val content: ContentViewModel =
                         viewModel(factory = ContentViewModel.Factory(catalog, DefaultApi.KeyGetPublicContent.home))
