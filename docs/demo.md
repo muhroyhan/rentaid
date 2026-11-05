@@ -1,5 +1,7 @@
 # Demo web lokal Rentaid
 
+Untuk membangun dan memasang APK penyewa, ikuti juga [panduan demo Android](android-demo.md).
+
 Paket ini menjalankan marketplace Next.js, admin statis di `/admin/`, API Go, PostgreSQL, dan volume media melalui satu origin. Pembayaran dan refund adalah simulasi lokal. Build pertama mengunduh image dan dependensi; aplikasi yang sudah dibangun berjalan tanpa layanan pihak ketiga.
 
 ## Persiapan

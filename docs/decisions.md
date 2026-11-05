@@ -133,3 +133,8 @@
 - Pengujian membangun project Compose acak dengan database dan volume baru. Proxy lokal test membuang respons sesudah upstream menyelesaikan request, sehingga pemulihan checkout dan pembayaran menguji transaksi PostgreSQL yang benar-benar tersimpan.
 - Pemulihan menjalankan ViewModel checkout Android dengan penyimpanan Keystore yang sama lintas penghentian proses. Kunci dan hash payload dibandingkan sebelum dan sesudah restart API/PostgreSQL; jumlah pesanan, pembayaran, dan riwayat konfirmasi diperiksa langsung pada database test.
 - Layar akun memeriksa sesi kembali saat aktif, dengan penjagaan agar pemulihan tidak berjalan bersamaan dengan operasi akun yang sedang diproses. Hal ini membuat pencabutan sesi tercermin saat pengguna kembali dari background.
+
+## Phase 25 - APK dan panduan demo
+
+- `pnpm android:demo` membangun dua APK debug dengan origin tetap sesuai cara koneksi: `127.0.0.1:8081` untuk USB dengan `adb reverse`, dan `10.0.2.2:8081` untuk emulator. Salinan APK dan manifest ukuran/SHA-256 disimpan di `.artifacts/android-demo`; kunci penandatanganan debug tetap dikelola oleh Gradle pada mesin build.
+- Verifikasi penyerahan memasang kedua berkas, memeriksa tanda tangan dan hash, lalu menjalankan alur UI Android bersama vendor dan admin browser pada project Compose terpisah. Jaringan runtime dibuat internal, dengan relay lokal khusus pengujian ke gateway; seed memakai akun dan password lokal tanpa layanan kredensial eksternal.
