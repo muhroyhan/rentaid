@@ -28,6 +28,10 @@ class AccountViewModel(private val repository: AccountRepository) : ViewModel() 
 
     fun restore() = execute(restoring = true) { copy(profile = repository.restore(), registrationComplete = false) }
 
+    fun refresh() {
+        if (!mutableState.value.loading) restore()
+    }
+
     fun register(
         email: String,
         password: String,

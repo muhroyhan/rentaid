@@ -127,3 +127,9 @@
 - Daftar penyewa memakai pagination API 20 pesanan dan detail memakai endpoint penyewa yang memuat pembayaran, refund, serta riwayat status. Data disegarkan saat layar aktif atau dimuat ulang; data lama dihapus sebelum memeriksa sesi kembali.
 - Pembatalan meminta konfirmasi dan mengirim status yang terakhir dibaca sebagai prasyarat. Konflik atau hasil jaringan yang tidak diketahui diikuti pembacaan ulang detail; server tetap menentukan status dan refund, termasuk ketika vendor atau admin bertindak bersamaan.
 - Pengujian perangkat mencakup pembatalan dan refund lintas sesi Android–web, akses pengguna lain, dan penolakan pembatalan setelah serah terima. Test browser tambahan membuat pesanan melalui Android, lalu menjalankan serah terima dan pengembalian melalui antarmuka vendor web sambil memeriksa status di Android.
+
+## Phase 24 - Stabilitas lintas aplikasi
+
+- Pengujian membangun project Compose acak dengan database dan volume baru. Proxy lokal test membuang respons sesudah upstream menyelesaikan request, sehingga pemulihan checkout dan pembayaran menguji transaksi PostgreSQL yang benar-benar tersimpan.
+- Pemulihan menjalankan ViewModel checkout Android dengan penyimpanan Keystore yang sama lintas penghentian proses. Kunci dan hash payload dibandingkan sebelum dan sesudah restart API/PostgreSQL; jumlah pesanan, pembayaran, dan riwayat konfirmasi diperiksa langsung pada database test.
+- Layar akun memeriksa sesi kembali saat aktif, dengan penjagaan agar pemulihan tidak berjalan bersamaan dengan operasi akun yang sedang diproses. Hal ini membuat pencabutan sesi tercermin saat pengguna kembali dari background.
