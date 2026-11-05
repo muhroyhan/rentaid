@@ -109,3 +109,9 @@
 - Katalog, kategori, detail, dan konten CMS diambil melalui klien Kotlin hasil generate; publikasi dan visibilitas tetap diputuskan API. Pagination meminta 20 produk per halaman dan menghapus duplikasi berdasarkan ID; pencarian dan perubahan kategori memulai halaman pertama kembali.
 - Foto dimuat dari endpoint media publik dengan batas unduhan 5 MB dan ukuran decode maksimal sekitar 1024 piksel per sisi. Gambar gagal ditampilkan sebagai pesan tanpa menghentikan aplikasi.
 - Pengujian memakai database terpisah dengan fixture produk terbit, produk nonpublik, halaman CMS, dan media yang gagal dimuat.
+
+## Phase 21 - Checkout Android
+
+- Penawaran, harga, ketersediaan, dan hold tetap ditentukan oleh API. Respons sesi, checkout, dan detail pesanan menyertakan header `Date` dari clock bisnis server. Android menghitung sisa hold dengan waktu monoton, dikurangi durasi perjalanan respons dan ketelitian satu detik header HTTP.
+- Upaya checkout disimpan terenkripsi sebelum dikirim, termasuk kunci idempotensi, data penawaran, akun, dan origin API. Hasil jaringan yang tidak diketahui dapat dicoba ulang dengan kunci dan data yang sama; percobaan otomatis diblokir mendekati batas idempotensi 24 jam. Data yang gagal didekripsi dipertahankan, dan upaya tidak dapat diteruskan oleh akun atau origin yang berbeda.
+- Perubahan penawaran memerlukan konfirmasi pengguna sebelum membuat upaya dan kunci baru. Pengujian perangkat memeriksa kesamaan penawaran web dan Android, pengulangan tanpa duplikasi, serta perebutan stok terakhir antara sesi web dan token Android.
