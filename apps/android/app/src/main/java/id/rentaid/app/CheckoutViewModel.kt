@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import id.rentaid.client.infrastructure.ClientException
 import id.rentaid.client.models.CheckoutInput
+import id.rentaid.client.models.Order
+import id.rentaid.client.models.PaymentInput
 import id.rentaid.client.models.Quote
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -137,7 +139,9 @@ class CheckoutViewModel(
     fun resume() {
         val pending = mutableState.value.pending ?: return
         if (mutableState.value.loading) return
-        mutableState.value = mutableState.value.copy(loading = true, message = null, needsLogin = false)
+        timer?.cancel()
+        mutableState.value =
+            mutableState.value.copy(loading = true, message = null, needsLogin = false, order = null, remainingSeconds = null)
         viewModelScope.launch {
             try {
                 if (pending.origin != gateway.origin) {
@@ -155,7 +159,25 @@ class CheckoutViewModel(
                         )
                     return@launch
                 }
-                if (pending.orderId != null) {
+                if (pending.orderId != null && pending.payment != null) {
+                    if (session.serverTime.toEpochMilli() - pending.payment.startedAtServerMillis >= RETRY_LIMIT_MILLIS) {
+                        val order = gateway.order(pending.orderId)
+                        if (order.order.status == Order.Status.pending_payment) {
+                            showOrder(order)
+                            mutableState.value =
+                                mutableState.value.copy(
+                                    message = "Hasil pembayaran belum diketahui. Hubungi admin untuk memeriksa pesanan.",
+                                )
+                        } else {
+                            val cleared = pending.copy(payment = null)
+                            store.write(cleared)
+                            mutableState.value = mutableState.value.copy(pending = cleared)
+                            showOrder(order)
+                        }
+                    } else {
+                        sendPayment(pending)
+                    }
+                } else if (pending.orderId != null) {
                     showOrder(gateway.order(pending.orderId))
                 } else if (session.serverTime.toEpochMilli() - pending.startedAtServerMillis >= RETRY_LIMIT_MILLIS) {
                     mutableState.value =
@@ -190,6 +212,89 @@ class CheckoutViewModel(
                     )
             }
         }
+    }
+
+    fun pay(outcome: PaymentInput.Outcome) {
+        val current = mutableState.value
+        val pending = current.pending ?: return
+        val order = current.order?.order ?: return
+        if (current.loading || pending.payment != null || order.status != Order.Status.pending_payment) return
+        mutableState.value = current.copy(loading = true, message = null)
+        viewModelScope.launch {
+            try {
+                if (pending.origin != gateway.origin) throw IllegalStateException("Wrong server")
+                val session = gateway.session()
+                if (session.userId != pending.userId) {
+                    mutableState.value =
+                        mutableState.value.copy(loading = false, needsLogin = true, message = "Masuk dengan akun yang membuat pesanan.")
+                    return@launch
+                }
+                val updated =
+                    pending.copy(
+                        payment = PaymentAttempt(UUID.randomUUID().toString(), outcome, session.serverTime.toEpochMilli()),
+                    )
+                store.write(updated)
+                mutableState.value = mutableState.value.copy(pending = updated)
+                sendPayment(updated)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: ClientException) {
+                mutableState.value =
+                    mutableState.value.copy(
+                        loading = false,
+                        needsLogin = error.statusCode == 401,
+                        message = if (error.statusCode == 401) "Masuk kembali untuk melanjutkan." else "Sesi tidak dapat diperiksa.",
+                    )
+            } catch (error: Exception) {
+                mutableState.value = mutableState.value.copy(loading = false, message = "Pembayaran belum dapat diperiksa. Coba lagi.")
+            }
+        }
+    }
+
+    private suspend fun sendPayment(pending: CheckoutAttempt) {
+        val payment = requireNotNull(pending.payment)
+        val orderId = requireNotNull(pending.orderId)
+        try {
+            when (val result = gateway.pay(orderId, payment)) {
+                PaymentResult.Completed -> completePayment(pending, null)
+                is PaymentResult.Rejected -> {
+                    if (result.code == "unauthorized") {
+                        mutableState.value =
+                            mutableState.value.copy(
+                                loading = false,
+                                needsLogin = true,
+                                message = "Masuk kembali untuk memeriksa pembayaran.",
+                            )
+                    } else {
+                        completePayment(pending, result.message)
+                    }
+                }
+                PaymentResult.Unknown ->
+                    mutableState.value =
+                        mutableState.value.copy(loading = false, message = "Hasil pembayaran belum diketahui. Periksa dan coba lagi.")
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            mutableState.value =
+                mutableState.value.copy(loading = false, message = "Hasil pembayaran belum diketahui. Periksa dan coba lagi.")
+        }
+    }
+
+    private suspend fun completePayment(
+        pending: CheckoutAttempt,
+        message: String?,
+    ) {
+        val order = gateway.order(requireNotNull(pending.orderId))
+        val cleared = pending.copy(payment = null)
+        store.write(cleared)
+        mutableState.value = mutableState.value.copy(pending = cleared)
+        showOrder(order)
+        if (message != null) mutableState.value = mutableState.value.copy(message = message)
+    }
+
+    fun refresh() {
+        if (!mutableState.value.loading && mutableState.value.pending?.orderId != null) resume()
     }
 
     private suspend fun send(attempt: CheckoutAttempt) {
@@ -269,7 +374,7 @@ class CheckoutViewModel(
     }
 
     fun finish(): Boolean {
-        if (mutableState.value.order == null || mutableState.value.loading) return false
+        if (mutableState.value.order == null || mutableState.value.loading || mutableState.value.pending?.payment != null) return false
         return try {
             store.clear()
             timer?.cancel()
