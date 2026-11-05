@@ -93,6 +93,12 @@ Jika aplikasi ditutup atau koneksi terputus saat pembayaran, buka **Lanjutkan pe
 
 Untuk memverifikasi pemulihan lintas proses pada perangkat dengan API test di atas, pasang APK test lalu jalankan metode instrumentasi `PaymentRecoveryProcessTest#prepareInterruptedPayment`, hentikan aplikasi dengan `adb shell am force-stop id.rentaid.app`, dan jalankan metode `PaymentRecoveryProcessTest#recoverInterruptedPayment`. Kedua tahap menggunakan penyimpanan test terpisah.
 
+## Phase 23 — Pesanan Android
+
+Pilih **Pesanan saya** pada beranda untuk melihat riwayat dan detail pembayaran, refund simulasi, serta perubahan status. Gunakan **Muat ulang** untuk memeriksa tindakan terbaru vendor atau admin. Pesanan yang masih menunggu pembayaran atau telah terkonfirmasi dapat dibatalkan setelah konfirmasi; server menentukan hasil akhir dan refund simulasi penuh untuk pembayaran yang berhasil.
+
+Test instrumentasi `OrderCrossClientIntegrationTest` dan `OrderUiIntegrationTest` memakai database test terpisah dan fixture yang dijelaskan di atas. Untuk menguji tindakan vendor melalui browser sungguhan, jalankan marketplace dengan `API_ORIGIN` menuju API test, izinkan origin marketplace pada `ALLOWED_ORIGINS`, pasang APK debug dan APK test yang menunjuk API test, dan pastikan `adb reverse` aktif. Tetapkan `ANDROID_HOME`, `ANDROID_SERIAL`, `CHROME_PATH`, `E2E_VENDOR_PASSWORD`, serta `E2E_WEB_URL` jika bukan `http://127.0.0.1:3000`, lalu jalankan `pnpm test:android-vendor`. Test membuat akun dan pesanan baru pada database test.
+
 Untuk menguji pemulihan sesi lintas proses setelah paket test terpasang, jalankan perintah berikut dengan satu perangkat aktif dan API test tetap berjalan. Tahap pertama membuat sesi; tahap kedua memverifikasi sesi setelah aplikasi dihentikan, kemudian logout:
 
 ```powershell

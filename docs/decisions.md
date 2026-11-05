@@ -121,3 +121,9 @@
 - Pembayaran memakai endpoint simulator dan klien Kotlin dari kontrak yang sudah ada. Pilihan berhasil, gagal, atau kedaluwarsa dijelaskan sebagai simulasi lokal; status yang ditampilkan selalu dimuat ulang dari API.
 - Kunci, hasil simulasi yang dipilih, waktu server, akun, dan origin disimpan bersama checkout terenkripsi sebelum request. Jika respons terputus, aplikasi memakai payload dan kunci yang sama; setelah batas aman 24 jam, aplikasi hanya memeriksa status dan tidak mengulang request. Detail lama disembunyikan saat sesi diperiksa kembali.
 - Tombol lanjutkan pesanan pada beranda membuka checkout tersimpan setelah aplikasi dibuka kembali. Saat layar kembali aktif, status dan upaya yang belum diketahui diperiksa melalui API; daftar riwayat tetap menjadi cakupan Phase 23.
+
+## Phase 23 - Riwayat dan pembatalan Android
+
+- Daftar penyewa memakai pagination API 20 pesanan dan detail memakai endpoint penyewa yang memuat pembayaran, refund, serta riwayat status. Data disegarkan saat layar aktif atau dimuat ulang; data lama dihapus sebelum memeriksa sesi kembali.
+- Pembatalan meminta konfirmasi dan mengirim status yang terakhir dibaca sebagai prasyarat. Konflik atau hasil jaringan yang tidak diketahui diikuti pembacaan ulang detail; server tetap menentukan status dan refund, termasuk ketika vendor atau admin bertindak bersamaan.
+- Pengujian perangkat mencakup pembatalan dan refund lintas sesi Android–web, akses pengguna lain, dan penolakan pembatalan setelah serah terima. Test browser tambahan membuat pesanan melalui Android, lalu menjalankan serah terima dan pengembalian melalui antarmuka vendor web sambil memeriksa status di Android.
