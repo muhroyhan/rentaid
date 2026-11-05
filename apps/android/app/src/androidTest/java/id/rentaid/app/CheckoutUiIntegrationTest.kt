@@ -54,9 +54,20 @@ class CheckoutUiIntegrationTest {
             compose.onNodeWithText("Total Rp300.000").performScrollTo().assertIsDisplayed()
             compose.onNodeWithText("Lanjut ke checkout").performScrollTo().performClick()
             compose.waitUntil(15_000) { compose.onAllNodes(hasText("Pesanan RNT-", substring = true)).fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithText("Status: pending_payment").assertIsDisplayed()
+            compose.onNodeWithText("Status: Menunggu pembayaran").assertIsDisplayed()
             compose.waitUntil(15_000) { compose.onAllNodes(hasText("Sisa hold:", substring = true)).fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithText("Sisa hold:", substring = true).assertIsDisplayed()
+            compose.onNodeWithText("Simulasikan berhasil").performScrollTo().performClick()
+            compose.waitUntil(15_000) {
+                compose.onAllNodes(hasText("Status: Pembayaran berhasil, pesanan terkonfirmasi")).fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Kembali").performScrollTo().performClick()
+            compose.onNodeWithText("Kembali").performScrollTo().performClick()
+            compose.onNodeWithText("Kembali").performScrollTo().performClick()
+            compose.onNodeWithText("Lanjutkan pesanan").performScrollTo().performClick()
+            compose.waitUntil(15_000) {
+                compose.onAllNodes(hasText("Status: Pembayaran berhasil, pesanan terkonfirmasi")).fetchSemanticsNodes().isNotEmpty()
+            }
             compose.onNodeWithText("Selesai").performScrollTo().performClick()
         } finally {
             attempts.clear()
