@@ -99,6 +99,10 @@ Pilih **Pesanan saya** pada beranda untuk melihat riwayat dan detail pembayaran,
 
 Test instrumentasi `OrderCrossClientIntegrationTest` dan `OrderUiIntegrationTest` memakai database test terpisah dan fixture yang dijelaskan di atas. Untuk menguji tindakan vendor melalui browser sungguhan, jalankan marketplace dengan `API_ORIGIN` menuju API test, izinkan origin marketplace pada `ALLOWED_ORIGINS`, pasang APK debug dan APK test yang menunjuk API test, dan pastikan `adb reverse` aktif. Tetapkan `ANDROID_HOME`, `ANDROID_SERIAL`, `CHROME_PATH`, `E2E_VENDOR_PASSWORD`, serta `E2E_WEB_URL` jika bukan `http://127.0.0.1:3000`, lalu jalankan `pnpm test:android-vendor`. Test membuat akun dan pesanan baru pada database test.
 
+## Phase 24 — Stabilitas lintas aplikasi
+
+`pnpm test:stability` membangun stack Compose test terpisah dan menjalankan web, admin, serta Android pada API dan PostgreSQL yang sama. Pengujian memutus respons checkout/pembayaran setelah commit, menghentikan proses Android, me-restart API dan PostgreSQL, memeriksa sesi offline dan pencabutan sesi oleh admin, serta menguji stok dan transaksi lintas aplikasi. Tetapkan `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SERIAL`, dan `CHROME_PATH`; port 18083, 18084, dan 15432 harus tersedia. Lihat [panduan dan bukti pengujian](docs/phase24-testing.md).
+
 Untuk menguji pemulihan sesi lintas proses setelah paket test terpasang, jalankan perintah berikut dengan satu perangkat aktif dan API test tetap berjalan. Tahap pertama membuat sesi; tahap kedua memverifikasi sesi setelah aplikasi dihentikan, kemudian logout:
 
 ```powershell
