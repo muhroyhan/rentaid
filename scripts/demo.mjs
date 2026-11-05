@@ -12,7 +12,7 @@ import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 
-export function demo(env = process.env) {
+export function demo(env = process.env, { extraComposeFiles = [] } = {}) {
   const project = env.RENTAID_COMPOSE_PROJECT ?? "rentaid";
   if (!/^[a-z0-9][a-z0-9_-]{0,62}$/.test(project))
     throw new Error("Nama project Compose tidak valid.");
@@ -29,6 +29,7 @@ export function demo(env = process.env) {
     "compose",
     "-f",
     join(root, "infra/compose.yaml"),
+    ...extraComposeFiles.flatMap((file) => ["-f", resolve(file)]),
     "-p",
     project,
     "--profile",

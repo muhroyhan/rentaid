@@ -154,8 +154,8 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 22 Checkout Android ke pembayaran dan order terkonfirmasi - simulasi berhasil/gagal/kedaluwarsa, retry idempoten, pemulihan setelah proses dihentikan, refresh status, dan batas hold teruji.
 - [x] 23 Order Android ke pemantauan, pembatalan, dan penyelesaian - riwayat, transaksi, pembatalan/refund, refresh status, otorisasi, serta serah terima dan pengembalian lewat browser vendor teruji pada perangkat.
 - [x] 24 Uji lintas aplikasi dan stabilitas - respons checkout/pembayaran terputus setelah commit, restart Android/API/PostgreSQL, sesi offline dan pencabutan admin, stok lintas klien, serta regresi perangkat/browser lulus pada stack test terpisah.
-- [ ] 25 APK penyerahan dan panduan demo
-- [ ] Gate akhir
+- [x] 25 APK penyerahan dan panduan demo - APK debug USB/emulator bertanda tangan dan checksum tersedia; instalasi, alur Android–vendor–admin, gagal/batal/refund, dan runtime lokal teruji pada perangkat serta emulator.
+- [x] Gate akhir - Phase 24 dan 25 memverifikasi aturan lintas aplikasi, stok dan transaksi, persistensi setelah restart, demo lokal, pemulihan, serta APK pada perangkat dan emulator.
 
 ## Perintah
 
@@ -167,6 +167,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm contracts:generate` / `pnpm contracts:check`: generate / periksa sinkronisasi OpenAPI dan klien TypeScript.
 - `pnpm android:generate` / `pnpm android:client-check`: generate / periksa klien Kotlin dari OpenAPI menggunakan Docker.
 - `pnpm android:build` / `pnpm android:check`: build APK debug / jalankan ktlint, unit test, dan build Android debug serta release; JDK 17 dan Android SDK 35 diperlukan.
+- `pnpm android:demo`: hasilkan APK debug bertanda tangan untuk USB dan emulator serta checksum; lihat `docs/android-demo.md`.
 - `pnpm check`: pemeriksaan merek, kontrak, TypeScript, ESLint, Prettier, gofmt, go vet, golangci-lint via Docker, dan test Go.
 - `pnpm test`: test Go melalui Docker; tetapkan `TEST_DATABASE_URL` untuk menjalankan test integrasi PostgreSQL.
 - `pnpm admin:dev` / `pnpm admin:build`: jalankan panel admin Vite / build admin.
@@ -187,6 +188,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:return`: uji pengembalian vendor, status penyewa/admin, dan stok inklusif melalui browser pada database demo terpisah.
 - `pnpm test:order-history`: uji riwayat dan filter pesanan lintas peran melalui browser pada database demo terpisah.
 - `pnpm test:android-vendor`: uji serah terima dan pengembalian melalui browser vendor serta status pesanan pada perangkat Android, menggunakan API dan database test terpisah; lihat `README.md`.
+- `pnpm test:android-delivery`: uji APK USB dan emulator dalam alur Android, vendor, dan admin pada stack Compose test berjaringan internal; lihat `docs/android-demo.md`.
 - `pnpm test:stability`: bangun stack test terpisah dan uji gangguan koneksi, restart Android/API/PostgreSQL, pencabutan sesi, serta konsistensi stok dan transaksi lintas aplikasi; lihat `docs/phase24-testing.md`.
 - `pnpm demo:up` / `pnpm demo:down` / `pnpm demo:seed`: jalankan paket demo Compose, hentikan tanpa menghapus volume, atau ulangi seed dari environment.
 - `pnpm demo:backup <direktori-baru>` / `pnpm demo:restore <direktori-backup>`: backup database/media bersama atau restore ke project target kosong; lihat `docs/demo.md`.

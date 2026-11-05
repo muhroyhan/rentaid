@@ -1,8 +1,8 @@
 # Rentaid — pengembangan lokal
 
-Workspace ini berisi marketplace Next.js, API Go, admin React + Vite, kontrak OpenAPI, klien TypeScript, dan PostgreSQL lokal. Ruang lingkup dan urutan implementasi ada di [AGENTS.md](AGENTS.md) dan [rencana pengembangan](docs/plan.md).
+Workspace ini berisi marketplace Next.js, aplikasi Android, API Go, admin React + Vite, kontrak OpenAPI, klien TypeScript, dan PostgreSQL lokal. Ruang lingkup dan urutan implementasi ada di [AGENTS.md](AGENTS.md) dan [rencana pengembangan](docs/plan.md).
 
-Paket demo lengkap, akun, alur pengguna, dan backup/restore dijelaskan pada [panduan demo web](docs/demo.md). Jalankan `pnpm demo:up` setelah mengatur environment seed.
+Paket demo lengkap, akun, alur pengguna, dan backup/restore dijelaskan pada [panduan demo web](docs/demo.md). Panduan build, pemasangan APK, dan skenario Android tersedia di [panduan demo Android](docs/android-demo.md). Jalankan `pnpm demo:up` setelah mengatur environment seed.
 
 ## Prasyarat
 
@@ -50,9 +50,12 @@ Gunakan JDK Temurin 17.0.20.1, Android SDK Platform 35 dan Build Tools 35.0.0. A
 pnpm android:client-check
 pnpm android:check
 pnpm android:build
+pnpm android:demo
 ```
 
 APK debug tersedia di `apps/android/app/build/outputs/apk/debug/app-debug.apk`. Jalankan `pnpm app:up`, lalu pasang APK dengan `adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk`. Buka Rentaid dan pilih **Periksa koneksi**. Emulator menggunakan `http://10.0.2.2:8081` secara default. Untuk perangkat USB, jalankan `adb reverse tcp:8081 tcp:8081`, kemudian build dengan `cd apps/android; .\gradlew.bat assembleDebug -PapiBaseUrl=http://127.0.0.1:8081`. Untuk alamat LAN, jalankan API pada alamat yang dapat dijangkau perangkat dan gunakan alamat tersebut dengan `-PapiBaseUrl`. Gateway Compose default hanya mendengarkan localhost, sehingga tidak langsung dapat diakses lewat LAN. HTTP hanya diizinkan dalam build debug; alamat HTTPS localhost pada release adalah placeholder sampai alamat deployment ditentukan.
+
+Untuk penyerahan demo, `pnpm android:demo` membuat APK USB dan emulator beserta checksum di `.artifacts/android-demo/`; petunjuk pemasangan dan alurnya ada di [panduan demo Android](docs/android-demo.md).
 
 Jalankan `pnpm android:generate` setelah mengubah kontrak OpenAPI dan commit klien yang diperbarui. Generator menggunakan image Docker OpenAPI Generator 7.13.0; `pnpm android:client-check` memeriksa kecocokan hasilnya. Test instrumentasi membuat data dan memerlukan fixture katalog; gunakan database terpisah seperti petunjuk berikut.
 
