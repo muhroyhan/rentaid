@@ -358,6 +358,15 @@
                   "$ref": "#/components/schemas/Session"
                 }
               }
+            },
+            "headers": {
+              "Date": {
+                "description": "Server time in HTTP-date format, using the checkout business clock.",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "400": {
@@ -2615,6 +2624,15 @@
                   "$ref": "#/components/schemas/Order"
                 }
               }
+            },
+            "headers": {
+              "Date": {
+                "description": "Server time in HTTP-date format, using the checkout business clock.",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "409": {
@@ -2676,6 +2694,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Order"
+                }
+              }
+            },
+            "headers": {
+              "Date": {
+                "description": "Server time in HTTP-date format, using the checkout business clock.",
+                "required": true,
+                "schema": {
+                  "type": "string"
                 }
               }
             }

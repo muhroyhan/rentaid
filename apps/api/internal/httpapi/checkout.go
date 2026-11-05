@@ -42,6 +42,7 @@ func registerCheckout(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Date", accounts.Clock.Now().UTC().Format(http.TimeFormat))
 		w.WriteHeader(result.Status)
 		_, _ = w.Write(result.Body)
 	})
@@ -65,6 +66,7 @@ func registerCheckout(mux *http.ServeMux, accounts *auth.Service, cfg AuthConfig
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Date", accounts.Clock.Now().UTC().Format(http.TimeFormat))
 		writeJSON(w, 200, order)
 	})
 }

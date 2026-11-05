@@ -10,6 +10,7 @@ import (
 	"image/png"
 	"io"
 	"log/slog"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"rentaid.local/api/internal/auth"
@@ -190,8 +191,14 @@ func TestProductsIntegration(t *testing.T) {
 		t.Fatalf("changed checkout: %d %s", response.Code, response.Body)
 	}
 	created := checkoutCall("successful", 200000)
+	if response := call("GET", "/api/v1/auth/session", otherToken, nil); response.Code != 200 || response.Header().Get("Date") != clk.Now().UTC().Format(http.TimeFormat) {
+		t.Fatalf("session Date: %d %q", response.Code, response.Header().Get("Date"))
+	}
 	if created.Code != 201 {
 		t.Fatalf("checkout: %d %s", created.Code, created.Body)
+	}
+	if got, want := created.Header().Get("Date"), clk.Now().UTC().Format(http.TimeFormat); got != want {
+		t.Fatalf("checkout Date: got %q, want %q", got, want)
 	}
 	var checkoutOrder struct {
 		ID string `json:"id"`
@@ -202,13 +209,15 @@ func TestProductsIntegration(t *testing.T) {
 	if _, err = pool.Exec(ctx, `UPDATE idempotency_keys SET response_body=response_body-'refundAmount' WHERE endpoint='checkout' AND key='successful'`); err != nil {
 		t.Fatal(err)
 	}
-	if response := checkoutCall("successful", 200000); response.Code != 201 || !strings.Contains(response.Body.String(), checkoutOrder.ID) {
+	clk.now = clk.now.Add(time.Second)
+	if response := checkoutCall("successful", 200000); response.Code != 201 || !strings.Contains(response.Body.String(), checkoutOrder.ID) || response.Header().Get("Date") != clk.Now().UTC().Format(http.TimeFormat) {
 		t.Fatalf("replay: %d %s", response.Code, response.Body)
 	}
+	clk.now = clk.now.Add(-time.Second)
 	if response := checkoutCall("successful", 100000); response.Code != 409 || !strings.Contains(response.Body.String(), `"idempotency_key_reuse"`) {
 		t.Fatalf("reuse: %d %s", response.Code, response.Body)
 	}
-	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, otherToken, nil); response.Code != 200 {
+	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, otherToken, nil); response.Code != 200 || response.Header().Get("Date") != clk.Now().UTC().Format(http.TimeFormat) {
 		t.Fatalf("order: %d %s", response.Code, response.Body)
 	}
 	if response := call("GET", "/api/v1/orders/"+checkoutOrder.ID, token, nil); response.Code != 404 {
