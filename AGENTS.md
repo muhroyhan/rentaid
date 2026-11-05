@@ -152,7 +152,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 20 Katalog Android ke detail produk - konten CMS, pencarian, filter, pagination, detail dan foto teruji pada perangkat; produk nonpublik, kegagalan data/gambar, regresi akun, dan integrasi PostgreSQL lulus.
 - [x] 21 Detail Android ke checkout dengan hold - penawaran server, checkout idempoten, pemulihan hasil tidak diketahui, hold berdasarkan waktu server, dan perebutan stok web–Android teruji pada perangkat.
 - [x] 22 Checkout Android ke pembayaran dan order terkonfirmasi - simulasi berhasil/gagal/kedaluwarsa, retry idempoten, pemulihan setelah proses dihentikan, refresh status, dan batas hold teruji.
-- [ ] 23 Order Android ke pemantauan, pembatalan, dan penyelesaian
+- [x] 23 Order Android ke pemantauan, pembatalan, dan penyelesaian - riwayat, transaksi, pembatalan/refund, refresh status, otorisasi, serta serah terima dan pengembalian lewat browser vendor teruji pada perangkat.
 - [ ] 24 Uji lintas aplikasi dan stabilitas
 - [ ] 25 APK penyerahan dan panduan demo
 - [ ] Gate akhir
@@ -186,6 +186,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - `pnpm test:handover`: uji serah terima vendor dan status penyewa/admin melalui browser pada database demo terpisah.
 - `pnpm test:return`: uji pengembalian vendor, status penyewa/admin, dan stok inklusif melalui browser pada database demo terpisah.
 - `pnpm test:order-history`: uji riwayat dan filter pesanan lintas peran melalui browser pada database demo terpisah.
+- `pnpm test:android-vendor`: uji serah terima dan pengembalian melalui browser vendor serta status pesanan pada perangkat Android, menggunakan API dan database test terpisah; lihat `README.md`.
 - `pnpm demo:up` / `pnpm demo:down` / `pnpm demo:seed`: jalankan paket demo Compose, hentikan tanpa menghapus volume, atau ulangi seed dari environment.
 - `pnpm demo:backup <direktori-baru>` / `pnpm demo:restore <direktori-backup>`: backup database/media bersama atau restore ke project target kosong; lihat `docs/demo.md`.
 - `pnpm test:demo`: uji alur lengkap, seed, restart, dan backup/restore pada dua project Compose sementara yang dibersihkan setelah pengujian.
