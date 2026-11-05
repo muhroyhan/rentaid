@@ -34,10 +34,12 @@ class MainActivity : ComponentActivity() {
         val repository = ApiConnectionRepository(DefaultApi(BuildConfig.API_BASE_URL))
         val accounts = ApiAccountRepository(BuildConfig.API_BASE_URL, KeystoreSessionStore(applicationContext))
         val catalog = ApiCatalogRepository(DefaultApi(BuildConfig.API_BASE_URL))
+        val checkout = ApiCheckoutGateway(BuildConfig.API_BASE_URL, KeystoreSessionStore(applicationContext))
+        val attempts = EncryptedCheckoutAttemptStore(KeystoreSessionStore(applicationContext, "checkout_pending", clearOnInvalid = false))
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    RentaidApp(repository, accounts, catalog)
+                    RentaidApp(repository, accounts, catalog, checkout = checkout, attempts = attempts)
                 }
             }
         }
@@ -50,6 +52,8 @@ fun RentaidApp(
     accounts: AccountRepository? = null,
     catalog: CatalogRepository? = null,
     baseUrl: String = BuildConfig.API_BASE_URL,
+    checkout: CheckoutGateway? = null,
+    attempts: CheckoutAttemptStore? = null,
 ) {
     val navigation = rememberNavController()
     NavHost(navController = navigation, startDestination = "home") {
@@ -84,12 +88,29 @@ fun RentaidApp(
             val id = runCatching { UUID.fromString(entry.arguments?.getString("id")) }.getOrNull()
             if (catalog != null && id != null) {
                 val model: ProductViewModel = viewModel(factory = ProductViewModel.Factory(catalog, id))
-                ProductScreen(model, baseUrl, onBack = { navigation.popBackStack() })
+                ProductScreen(
+                    model,
+                    baseUrl,
+                    onBack = { navigation.popBackStack() },
+                    onCheckout =
+                        if (checkout != null && attempts != null) {
+                            { navigation.navigate("checkout/$id") }
+                        } else {
+                            null
+                        },
+                )
             } else {
                 Column(Modifier.padding(24.dp)) {
                     Text("Produk tidak tersedia.")
                     Button(onClick = { navigation.popBackStack() }) { Text("Kembali") }
                 }
+            }
+        }
+        composable("checkout/{id}") { entry ->
+            val id = runCatching { UUID.fromString(entry.arguments?.getString("id")) }.getOrNull()
+            if (id != null && checkout != null && attempts != null) {
+                val model: CheckoutViewModel = viewModel(factory = CheckoutViewModel.Factory(id, checkout, attempts))
+                CheckoutScreen(model, onAccount = { navigation.navigate("account") }, onBack = { navigation.popBackStack() })
             }
         }
         composable("content/{key}") { entry ->

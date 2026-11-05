@@ -153,6 +153,7 @@ func registerAuth(mux *http.ServeMux, svc *auth.Service, cfg AuthConfig) {
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Date", svc.Clock.Now().UTC().Format(http.TimeFormat))
 		writeJSON(w, 200, session)
 	})
 	mux.HandleFunc("POST /api/v1/auth/logout", func(w http.ResponseWriter, r *http.Request) {

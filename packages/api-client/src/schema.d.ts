@@ -1541,6 +1541,8 @@ export interface operations {
             /** @description Success */
             200: {
                 headers: {
+                    /** @description Server time in HTTP-date format, using the checkout business clock. */
+                    Date: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3054,6 +3056,8 @@ export interface operations {
             /** @description Order created or replayed */
             201: {
                 headers: {
+                    /** @description Server time in HTTP-date format, using the checkout business clock. */
+                    Date: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3094,6 +3098,8 @@ export interface operations {
             /** @description Order for its owner */
             200: {
                 headers: {
+                    /** @description Server time in HTTP-date format, using the checkout business clock. */
+                    Date: string;
                     [name: string]: unknown;
                 };
                 content: {

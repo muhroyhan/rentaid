@@ -64,19 +64,26 @@ Pilih **Akun dan profil** untuk mendaftar, masuk, mengubah nama dan nomor telepo
 
 Beranda menampilkan konten CMS yang telah diterbitkan. Pilih **Lihat katalog** untuk mencari produk, menyaring kategori, membuka halaman berikutnya, dan melihat detail serta foto produk. Konten FAQ, tentang, syarat, dan privasi dapat dibuka dari beranda. Foto yang gagal dimuat menampilkan pesan tanpa menghentikan aplikasi.
 
-Test instrumentasi akun dan katalog membuat data, sehingga gunakan database test baru yang terpisah. Contoh PowerShell berikut menggunakan PostgreSQL Compose, image `rentaid-api` yang sudah dibangun, dan satu perangkat USB:
+Test instrumentasi akun, katalog, dan checkout membuat data, sehingga gunakan database test baru yang terpisah. Contoh PowerShell berikut menggunakan PostgreSQL Compose, image `rentaid-api` yang sudah dibangun, dan satu perangkat USB:
 
 ```powershell
 docker compose -f infra/compose.yaml exec -T postgres psql -U rentaid -d postgres -c 'CREATE DATABASE rentaid_android_test'
-docker run -d --name rentaid-android-test-api --network rentaid_default -p 127.0.0.1:18082:8080 -e APP_ENV=local -e HTTP_ADDR=0.0.0.0:8080 -e 'DATABASE_URL=postgres://rentaid:rentaid_local@postgres:5432/rentaid_android_test?sslmode=disable' -e SEED_ADMIN_EMAIL=admin@example.test -e SEED_ADMIN_PASSWORD=Phase20-test-password! -e SEED_DEMO_PASSWORD=Phase20-test-password! rentaid-api /bin/sh -c '/app/rentaid migrate && /app/rentaid seed && exec /app/rentaid serve'
-# Tunggu http://127.0.0.1:18082/api/v1/ready mengembalikan status ok.
+docker run -d --name rentaid-android-test-api --network rentaid_default -p 127.0.0.1:18083:8080 -e APP_ENV=local -e HTTP_ADDR=0.0.0.0:8080 -e ALLOWED_ORIGINS=http://localhost:18083 -e 'DATABASE_URL=postgres://rentaid:rentaid_local@postgres:5432/rentaid_android_test?sslmode=disable' -e SEED_ADMIN_EMAIL=admin@example.test -e SEED_ADMIN_PASSWORD=Phase21-test-password! -e SEED_DEMO_PASSWORD=Phase21-test-password! rentaid-api /bin/sh -c '/app/rentaid migrate && /app/rentaid seed && exec /app/rentaid serve'
+# Tunggu http://127.0.0.1:18083/api/v1/ready mengembalikan status ok.
 Get-Content -Raw tests/android/phase20-fixtures.sql | docker compose -f infra/compose.yaml exec -T postgres psql -v ON_ERROR_STOP=1 -U rentaid -d rentaid_android_test
-adb reverse tcp:18082 tcp:18082
+Get-Content -Raw tests/android/phase21-fixtures.sql | docker compose -f infra/compose.yaml exec -T postgres psql -v ON_ERROR_STOP=1 -U rentaid -d rentaid_android_test
+adb reverse tcp:18083 tcp:18083
 cd apps/android
-.\gradlew.bat connectedDebugAndroidTest -PapiBaseUrl=http://127.0.0.1:18082
+.\gradlew.bat connectedDebugAndroidTest -PapiBaseUrl=http://127.0.0.1:18083
 ```
 
-Untuk emulator, gunakan alamat `http://10.0.2.2:18082`. Fixture membuat produk dan konten publik serta satu produk nonpublik dan foto yang sengaja gagal dimuat; jalankan sekali pada database baru. Test API Go terhadap PostgreSQL terpisah dapat dijalankan dengan `TEST_DATABASE_URL` yang menunjuk database test dan `pnpm test`. Kembali ke root workspace setelah menjalankan Gradle.
+Untuk emulator, gunakan alamat `http://10.0.2.2:18083`. Fixture membuat produk dan konten publik, produk nonpublik, foto yang sengaja gagal dimuat, dan produk dengan satu stok untuk pengujian persaingan web–Android; jalankan sekali pada database baru. Test API Go terhadap PostgreSQL terpisah dapat dijalankan dengan `TEST_DATABASE_URL` yang menunjuk database test dan `pnpm test`. Kembali ke root workspace setelah menjalankan Gradle.
+
+## Phase 21 — Penawaran dan checkout Android
+
+Dari detail produk, pilih **Rencanakan sewa**, isi tanggal mulai dan selesai dalam format `YYYY-MM-DD`, serta jumlah barang. Periksa penawaran dari server sebelum melanjutkan checkout. Jika harga atau ketersediaan berubah, periksa dan setujui kembali penawaran terbaru. Setelah checkout berhasil, aplikasi menampilkan kode pesanan dan sisa waktu hold berdasarkan waktu server.
+
+Jika hasil checkout tidak diketahui karena koneksi terputus, pilih **Periksa dan coba lagi**. Aplikasi menyimpan kunci dan data checkout secara terenkripsi serta memakai data yang sama saat mencoba ulang, termasuk setelah aplikasi dibuka kembali. Gunakan akun dan alamat server yang sama. Setelah masa kunci 24 jam hampir habis, retry otomatis diblokir; minta admin memeriksa pesanan sebelum membuat checkout baru.
 
 Untuk menguji pemulihan sesi lintas proses setelah paket test terpasang, jalankan perintah berikut dengan satu perangkat aktif dan API test tetap berjalan. Tahap pertama membuat sesi; tahap kedua memverifikasi sesi setelah aplikasi dihentikan, kemudian logout:
 

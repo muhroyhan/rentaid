@@ -18,7 +18,11 @@ interface SessionStore {
     fun clear()
 }
 
-class KeystoreSessionStore(context: Context, preferenceName: String = "secure_session") : SessionStore {
+class KeystoreSessionStore(
+    context: Context,
+    preferenceName: String = "secure_session",
+    private val clearOnInvalid: Boolean = true,
+) : SessionStore {
     private val preferences = context.getSharedPreferences(preferenceName, Context.MODE_PRIVATE)
     private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
@@ -43,6 +47,7 @@ class KeystoreSessionStore(context: Context, preferenceName: String = "secure_se
             cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, payload.copyOfRange(0, IV_SIZE)))
             String(cipher.doFinal(payload.copyOfRange(IV_SIZE, payload.size)), Charsets.UTF_8)
         } catch (error: Exception) {
+            if (!clearOnInvalid) throw IllegalStateException("Stored checkout cannot be decrypted", error)
             clear()
             null
         }

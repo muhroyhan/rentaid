@@ -149,6 +149,7 @@ fun ProductScreen(
     model: ProductViewModel,
     baseUrl: String,
     onBack: () -> Unit,
+    onCheckout: (() -> Unit)? = null,
 ) {
     val state by model.state.collectAsStateWithLifecycle()
     Column(Modifier.verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -159,7 +160,13 @@ fun ProductScreen(
                 Button(onClick = model::refresh) { Text("Coba lagi") }
             }
             state.value == null -> Text("Produk tidak tersedia.")
-            else -> state.value?.let { ProductDetails(it, baseUrl) }
+            else ->
+                state.value?.let {
+                    ProductDetails(it, baseUrl)
+                    if (onCheckout != null) {
+                        Button(onClick = onCheckout) { Text("Rencanakan sewa") }
+                    }
+                }
         }
         Button(onClick = onBack) { Text("Kembali") }
     }
