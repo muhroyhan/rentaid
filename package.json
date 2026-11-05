@@ -45,6 +45,7 @@
     "test:return": "node scripts/test-return.mjs",
     "test:order-history": "node scripts/test-order-history.mjs",
     "test:android-vendor": "node scripts/test-android-vendor.mjs",
+    "test:stability": "node scripts/test-stability.mjs",
     "demo:up": "node scripts/demo.mjs up",
     "demo:down": "node scripts/demo.mjs down",
     "demo:seed": "node scripts/demo.mjs seed",
