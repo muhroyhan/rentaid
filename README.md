@@ -85,6 +85,14 @@ Dari detail produk, pilih **Rencanakan sewa**, isi tanggal mulai dan selesai dal
 
 Jika hasil checkout tidak diketahui karena koneksi terputus, pilih **Periksa dan coba lagi**. Aplikasi menyimpan kunci dan data checkout secara terenkripsi serta memakai data yang sama saat mencoba ulang, termasuk setelah aplikasi dibuka kembali. Gunakan akun dan alamat server yang sama. Setelah masa kunci 24 jam hampir habis, retry otomatis diblokir; minta admin memeriksa pesanan sebelum membuat checkout baru.
 
+## Phase 22 — Pembayaran simulasi Android
+
+Pada pesanan yang menunggu pembayaran, pilih **Simulasikan berhasil**, **Simulasikan gagal**, atau **Simulasikan kedaluwarsa**. Ini adalah simulasi lokal dan tidak memindahkan uang. Status pesanan diperbarui dari server; pembayaran gagal dan kedaluwarsa bersifat final.
+
+Jika aplikasi ditutup atau koneksi terputus saat pembayaran, buka **Lanjutkan pesanan** di beranda dengan akun dan server yang sama. Aplikasi memeriksa hasil dan menggunakan kunci yang sama saat perlu mencoba ulang. Setelah masa kunci hampir 24 jam, aplikasi tidak mengirim ulang; jika hasil tetap belum diketahui, minta admin memeriksa pesanan. Simulator harus diaktifkan melalui `PAYMENT_SIMULATOR_ENABLED=true` pada API lokal.
+
+Untuk memverifikasi pemulihan lintas proses pada perangkat dengan API test di atas, pasang APK test lalu jalankan metode instrumentasi `PaymentRecoveryProcessTest#prepareInterruptedPayment`, hentikan aplikasi dengan `adb shell am force-stop id.rentaid.app`, dan jalankan metode `PaymentRecoveryProcessTest#recoverInterruptedPayment`. Kedua tahap menggunakan penyimpanan test terpisah.
+
 Untuk menguji pemulihan sesi lintas proses setelah paket test terpasang, jalankan perintah berikut dengan satu perangkat aktif dan API test tetap berjalan. Tahap pertama membuat sesi; tahap kedua memverifikasi sesi setelah aplikasi dihentikan, kemudian logout:
 
 ```powershell

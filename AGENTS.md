@@ -151,7 +151,7 @@ Tandai `[x]` saat kriteria selesai dan test phase lulus. Catat keterbatasan sing
 - [x] 19 Pengguna Android ke sesi dan profil - registrasi/login, profil, logout dan pencabutan, pemulihan setelah restart dan enkripsi Keystore teruji pada emulator dan perangkat USB; kedaluwarsa/suspend teruji dengan PostgreSQL.
 - [x] 20 Katalog Android ke detail produk - konten CMS, pencarian, filter, pagination, detail dan foto teruji pada perangkat; produk nonpublik, kegagalan data/gambar, regresi akun, dan integrasi PostgreSQL lulus.
 - [x] 21 Detail Android ke checkout dengan hold - penawaran server, checkout idempoten, pemulihan hasil tidak diketahui, hold berdasarkan waktu server, dan perebutan stok web–Android teruji pada perangkat.
-- [ ] 22 Checkout Android ke pembayaran dan order terkonfirmasi
+- [x] 22 Checkout Android ke pembayaran dan order terkonfirmasi - simulasi berhasil/gagal/kedaluwarsa, retry idempoten, pemulihan setelah proses dihentikan, refresh status, dan batas hold teruji.
 - [ ] 23 Order Android ke pemantauan, pembatalan, dan penyelesaian
 - [ ] 24 Uji lintas aplikasi dan stabilitas
 - [ ] 25 APK penyerahan dan panduan demo
