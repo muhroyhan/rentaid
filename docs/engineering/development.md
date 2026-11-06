@@ -15,28 +15,19 @@ Folder aplikasi lama hanya referensi; jangan memakai konfigurasi layanan atau kr
 
 ## Menjalankan API dan database
 
-Contoh PowerShell berikut memakai PostgreSQL pengembangan pada port 5432. Jika port sudah dipakai, tetapkan `RENTAID_DB_PORT` sebelum `db:up` dan sesuaikan port dalam `DATABASE_URL`.
+Salin `.env.example` menjadi `.env` melalui editor dan isi `SEED_ADMIN_EMAIL` serta `SEED_ADMIN_PASSWORD` (minimal 12 karakter). Script `api:dev`, `db:migrate`, dan `db:seed` memuat `.env` otomatis; environment terminal yang sudah ditetapkan tetap diprioritaskan. Contoh berikut memakai PostgreSQL pengembangan pada port 5432. Jika port sudah dipakai, sesuaikan `RENTAID_DB_PORT` dan `DATABASE_URL` di `.env`.
 
 ```powershell
 pnpm install --frozen-lockfile
 pnpm db:up
-$env:APP_ENV = "local"
-$env:DATABASE_URL = "postgres://rentaid:rentaid_local@localhost:5432/rentaid?sslmode=disable"
-$env:PAYMENT_SIMULATOR_ENABLED = "true"
 pnpm db:migrate
-$env:SEED_ADMIN_EMAIL = "admin@example.test"
-$taskSecret = Read-Host "Password admin lokal (minimal 12 karakter)" -AsSecureString
-$taskPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($taskSecret)
-try { $env:SEED_ADMIN_PASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($taskPtr) }
-finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($taskPtr) }
 pnpm db:seed
-Remove-Item Env:SEED_ADMIN_PASSWORD
 pnpm api:dev
 ```
 
 Periksa `http://127.0.0.1:8080/api/v1/health` untuk liveness proses dan `http://127.0.0.1:8080/api/v1/ready` untuk kesiapan database. Hentikan API dengan Ctrl+C. `pnpm db:down` menghentikan Compose tanpa menghapus volume.
 
-Seed membuat setting demo dan admin, tidak mengganti password akun yang sudah ada, dan menolak `APP_ENV=production`. Untuk membuat akun/toko/produk demo, tetapkan juga `SEED_DEMO_PASSWORD` minimal 12 karakter sebelum `db:seed` menggunakan pola input aman di [mulai cepat](../../README.md#mulai-cepat). Akun demo adalah `demo.pending@example.test`, `demo.approved@example.test`, `demo.rejected@example.test`, dan `demo.suspended@example.test`. Seed tidak menimpa perubahan toko atau produk demo yang sudah ada. Hapus variabel password setelah seed.
+Seed membuat setting demo dan admin, tidak mengganti password akun yang sudah ada, dan menolak `APP_ENV=production`. Untuk membuat akun/toko/produk demo, isi juga `SEED_DEMO_PASSWORD` minimal 12 karakter di `.env` sebelum `db:seed`. Akun demo adalah `demo.pending@example.test`, `demo.approved@example.test`, `demo.rejected@example.test`, dan `demo.suspended@example.test`. Seed tidak menimpa perubahan toko atau produk demo yang sudah ada.
 
 ## Menjalankan marketplace dan admin
 
@@ -60,7 +51,7 @@ Untuk memilih project terpisah, menjalankan seed otomatis, atau backup/restore, 
 
 ## Konfigurasi
 
-[`.env.example`](../../.env.example) berisi contoh tanpa rahasia dan tidak dimuat otomatis oleh perintah pnpm. Environment proses API host terpisah dari environment container; Compose menetapkan konfigurasi API internal pada `infra/compose.yaml`.
+[`.env.example`](../../.env.example) berisi contoh tanpa rahasia. `api:dev`, `db:migrate`, dan `db:seed` memuat `.env` lokal melalui pembungkus script; environment proses yang sudah disetel memiliki prioritas. Environment API host tetap terpisah dari environment container, yang diatur Compose dalam `infra/compose.yaml`.
 
 | Variabel                                   | Perilaku                                                                                                                                                                                        |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,188 +1,183 @@
 # Rentaid
 
-Marketplace penyewaan barang dengan aplikasi web untuk penyewa dan vendor, panel admin/CMS, serta aplikasi Android untuk penyewa. Demo lokal mendukung alur pilih produk → checkout → bayar simulasi → serah terima → pengembalian, dengan data tersimpan di PostgreSQL.
+A rental marketplace with a web app for renters and vendors, an admin/CMS panel, and an Android app for renters. The local demo supports the full flow: choose a product → checkout → simulated payment → handover → return, with data stored in PostgreSQL.
 
-Pembayaran dan refund adalah simulasi lokal tanpa perpindahan uang. Runtime demo tidak memerlukan layanan pihak ketiga; build pertama memerlukan unduhan dependensi dan image.
+Payments and refunds are local simulations; no money changes hands. The demo runtime does not require third-party services. The first build downloads dependencies and container images.
 
-## Daftar isi
+## Table of contents
 
-- [Tentang](#tentang)
-- [Fitur](#fitur)
-- [Teknologi](#teknologi)
-- [Arsitektur](#arsitektur)
-- [Struktur proyek](#struktur-proyek)
-- [Mulai cepat](#mulai-cepat)
-- [Konfigurasi](#konfigurasi)
-- [Keamanan](#keamanan)
-- [Kontribusi](#kontribusi)
-- [Status dan arah pengembangan](#status-dan-arah-pengembangan)
-- [Lisensi](#lisensi)
-- [Apresiasi](#apresiasi)
-- [Pengelola](#pengelola)
+- [About](#about)
+- [Features](#features)
+- [Technology](#technology)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Status and roadmap](#status-and-roadmap)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+- [Maintainer](#maintainer)
 
-## Tentang
+## About
 
-Rentaid mempertemukan penyewa dengan toko rental yang disetujui admin. Satu akun pengguna dapat menyewa sekaligus memiliki satu toko; pengelolaan vendor tersedia melalui web. Admin memakai panel terpisah untuk mengelola pengguna, toko, katalog, transaksi, dan konten.
+Rentaid connects renters with rental shops approved by an administrator. A user account can both rent items and own one shop; vendors manage their shops on the web. Administrators use a separate panel to manage users, shops, catalogs, transactions, and content.
 
-MVP ditujukan untuk demo lokal dan APK Android yang dapat dipasang. Antarmuka menggunakan Bahasa Indonesia, rupiah, dan zona waktu Asia/Jakarta. Hosting publik, pembayaran sungguhan, dan publikasi Play Store berada di luar cakupan MVP.
+The MVP is intended for local demos and an installable Android APK. The interface uses Indonesian, Indonesian rupiah, and the Asia/Jakarta time zone. Public hosting, real payments, and Play Store publication are outside the MVP scope.
 
-## Fitur
+## Features
 
-| Area          | Kemampuan                                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Akun          | Pendaftaran, login, profil, logout, dan pencabutan sesi saat pengguna ditangguhkan.                                                   |
-| Katalog       | Pencarian, kategori, pagination, detail produk, foto, dan informasi toko.                                                             |
-| Vendor        | Pengajuan toko, pengajuan ulang setelah penolakan, serta pengelolaan produk, foto, stok, publikasi, dan arsip.                        |
-| Penyewaan     | Satu produk per pesanan, penawaran harga harian inklusif, ketersediaan per tanggal, dan hold stok 15 menit.                           |
-| Transaksi     | Pembayaran simulasi berhasil/gagal/kedaluwarsa, pembatalan sebelum serah terima, dan refund simulasi penuh setelah pembayaran sukses. |
-| Pesanan       | Serah terima dan pengembalian oleh vendor, riwayat status, pembayaran, serta refund sesuai hak akses.                                 |
-| Admin dan CMS | Persetujuan toko, moderasi produk, kategori, pengguna, pesanan, serta draft/publikasi beranda, FAQ, tentang, syarat, dan privasi.     |
-| Android       | Alur penyewa, token terlindungi Keystore, serta pemulihan upaya checkout dan pembayaran setelah koneksi terputus.                     |
-| Operasional   | Seed berulang, health check, volume persisten, serta backup/restore database dan media.                                               |
+| Area          | Capabilities                                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Accounts      | Registration, login, profile, logout, and session revocation when a user is suspended.                                                       |
+| Catalog       | Search, categories, pagination, product details, photos, and shop information.                                                               |
+| Vendors       | Shop applications and resubmission after rejection; product, photo, inventory, publishing, and archive management.                           |
+| Rentals       | One product per order, inclusive daily pricing, date-based availability, and a 15-minute inventory hold.                                     |
+| Transactions  | Simulated successful, failed, or expired payments; cancellation before handover; and full simulated refunds after successful payments.       |
+| Orders        | Vendor handover and returns, status history, payments, and refunds according to access permissions.                                          |
+| Admin and CMS | Shop approvals, product moderation, categories, users, orders, and draft/publish workflows for home, FAQ, about, terms, and privacy content. |
+| Android       | Renter flows, Keystore-protected tokens, and recovery of checkout/payment attempts after connection loss.                                    |
+| Operations    | Repeatable seeding, health checks, persistent volumes, and database/media backup and restore.                                                |
 
-## Teknologi
+## Technology
 
-| Komponen    | Teknologi dan versi                                                                         |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| Workspace   | Node.js 24.22.1, pnpm 12.14.0, TypeScript 5.9.3                                             |
-| Marketplace | Next.js 16.4.3, React 19.3.1                                                                |
-| Admin/CMS   | React 19.3.1, Vite 8.3.5                                                                    |
-| API         | Go 1.27.2, `net/http`, pgx, kin-openapi, migrasi SQL berversi                               |
-| Database    | PostgreSQL 18.1 melalui Docker Compose                                                      |
-| Android     | Kotlin 2.1.20, Jetpack Compose, JDK 17, Android SDK 35, Gradle Wrapper 8.11.1               |
-| Kontrak     | OpenAPI 3.0.3, openapi-typescript, openapi-fetch, OpenAPI Generator untuk Kotlin            |
-| Kualitas    | ESLint, Prettier, Go vet, golangci-lint, ktlint, Playwright, dan test instrumentasi Android |
+| Component   | Technology and version                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| Workspace   | Node.js 24.22.1, pnpm 12.14.0, TypeScript 5.9.3                                                |
+| Marketplace | Next.js 16.4.3, React 19.3.1                                                                   |
+| Admin/CMS   | React 19.3.1, Vite 8.3.5                                                                       |
+| API         | Go 1.27.2, `net/http`, pgx, kin-openapi, versioned SQL migrations                              |
+| Database    | PostgreSQL 18.1 through Docker Compose                                                         |
+| Android     | Kotlin 2.1.20, Jetpack Compose, JDK 17, Android SDK 35, Gradle Wrapper 8.11.1                  |
+| Contracts   | OpenAPI 3.0.3, openapi-typescript, openapi-fetch, OpenAPI Generator for Kotlin                 |
+| Quality     | ESLint, Prettier, Go vet, golangci-lint, ktlint, Playwright, and Android instrumentation tests |
 
-Versi mengikuti manifest aplikasi, lockfile, Gradle, dan konfigurasi Compose di repository.
+Versions are based on the application manifests, lockfile, Gradle configuration, and Compose configuration in this repository.
 
-## Arsitektur
+## Architecture
 
 ```mermaid
 flowchart LR
-    Browser[Browser penyewa, vendor, dan admin] --> Gateway[Gateway satu origin]
-    Android[Android penyewa] -->|Bearer token melalui API lokal| Gateway
-    Gateway -->|/| Web[Marketplace Next.js]
-    Gateway -->|/admin/| Admin[Admin React statis]
-    Gateway -->|/api/| API[API Go]
-    Web -->|SSR dengan cookie sesi| API
+    Browser[Renters, vendors, and admins in a browser] --> Gateway[Single-origin gateway]
+    Android[Android renter app] -->|Bearer token through local API| Gateway
+    Gateway -->|/| Web[Next.js marketplace]
+    Gateway -->|/admin/| Admin[Static React admin]
+    Gateway -->|/api/| API[Go API]
+    Web -->|SSR with session cookie| API
     API --> DB[(PostgreSQL)]
-    API --> Media[(Volume media)]
+    API --> Media[(Media volume)]
 ```
 
-Diagram menunjukkan demo Compose. Saat pengembangan, Next.js dan Vite meneruskan `/api` ke Go. API Go menjadi satu-satunya aplikasi yang mengakses database dan menjalankan aturan bisnis. Kontrak REST `/api/v1` menghasilkan klien TypeScript dan Kotlin; media disajikan melalui API.
+The diagram shows the Compose demo. During development, Next.js and Vite proxy `/api` requests to Go. The Go API is the only application that accesses the database and owns business rules. The REST `/api/v1` contract generates TypeScript and Kotlin clients; media is served through the API.
 
-## Struktur proyek
+## Project structure
 
 ```text
 apps/
-  web/          Marketplace penyewa dan vendor
-  admin/        Panel admin dan CMS
-  api/          API Go, migrasi, dan seed
-  android/      Aplikasi Kotlin dan klien hasil generate
+  web/          Renter and vendor marketplace
+  admin/        Admin and CMS panel
+  api/          Go API, migrations, and seed
+  android/      Kotlin app and generated client
 packages/
-  contracts/    Spesifikasi OpenAPI dan konfigurasi generator
-  api-client/   Klien TypeScript dan tipe hasil generate
-  ui/           Token dan gaya bersama aplikasi web
-infra/          Docker Compose dan reverse proxy
-scripts/        Perintah pengembangan, build, demo, dan test
-tests/          Pengujian lintas aplikasi dan fixture
-docs/           Panduan operasional dan keputusan teknis
+  contracts/    OpenAPI specification and generator configuration
+  api-client/   Generated TypeScript client and types
+  ui/           Shared web tokens and styles
+infra/          Docker Compose and reverse proxy
+scripts/        Development, build, demo, and test utilities
+tests/          Cross-application tests and fixtures
+docs/           Operational guides and technical decisions
 ```
 
-Folder proyek lama dipertahankan sebagai referensi dan tidak termasuk workspace, build, atau runtime baru.
+Legacy project folders are retained for reference and are excluded from the workspace, builds, and new runtime.
 
-## Mulai cepat
+## Quick start
 
-Siapkan **Node.js 24.22.1**, **pnpm 12.14.0**, dan **Docker dengan Compose aktif**, lalu buka terminal di root repository. Go host tidak diperlukan untuk demo Compose. Contoh PowerShell ini memakai project dan port database terpisah dari pengembangan default:
+For source development, run PostgreSQL in Docker and the applications locally. Install **Node.js 24.22.1**, **pnpm 12.14.0**, **Go 1.27.2**, and **Docker Compose**. Create a local `.env` file from `.env.example` using an editor, then set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` (at least 12 characters). `.env` is ignored by Git and loaded automatically by the API, migration, and seed development scripts.
+
+In the first terminal, run these scripts from the repository root:
 
 ```powershell
 pnpm install --frozen-lockfile
-$env:RENTAID_COMPOSE_PROJECT = "rentaid-demo"
-$env:RENTAID_DB_PORT = "5433"
-$env:RENTAID_HTTP_PORT = "8081"
-$env:SEED_ADMIN_EMAIL = "admin@example.test"
-foreach ($taskVariable in @("SEED_ADMIN_PASSWORD", "SEED_DEMO_PASSWORD")) {
-  $taskSecret = Read-Host "$taskVariable (minimal 12 karakter)" -AsSecureString
-  $taskPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($taskSecret)
-  try { Set-Item -Path "Env:$taskVariable" -Value ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($taskPtr)) }
-  finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($taskPtr) }
-}
-pnpm demo:up
-Remove-Item Env:SEED_ADMIN_PASSWORD, Env:SEED_DEMO_PASSWORD
+pnpm db:up
+pnpm db:migrate
+pnpm db:seed
+pnpm api:dev
 ```
 
-`demo:up` membangun aplikasi, menjalankan migrasi, menunggu health check, dan membuat data demo. Pilih port yang tersedia dan pertahankan variabel project/port pada terminal untuk perintah berikutnya.
+Leave the API running. Open two more terminals at the repository root and start the frontend apps:
 
-| Layanan                   | Alamat                                |
-| ------------------------- | ------------------------------------- |
-| Marketplace               | <http://127.0.0.1:8081/>              |
-| Admin                     | <http://127.0.0.1:8081/admin/>        |
-| Kesiapan API dan database | <http://127.0.0.1:8081/api/v1/ready>  |
-| Liveness proses API       | <http://127.0.0.1:8081/api/v1/health> |
+```powershell
+# Second terminal: marketplace
+pnpm web:dev
+```
 
-Masuk ke admin dengan email dan password seed yang Anda tentukan. Vendor contoh adalah `demo.approved@example.test` dengan password `SEED_DEMO_PASSWORD`; daftarkan akun penyewa dari marketplace. Seed berulang tidak mengganti password akun yang sudah ada.
+```powershell
+# Third terminal: admin panel
+pnpm admin:dev
+```
 
-Hentikan dengan `pnpm demo:down`; volume database dan media tetap tersimpan. Untuk memulai kembali, tetapkan lagi password seed yang sama dan jalankan `pnpm demo:up` dengan project yang sama.
+Open the marketplace at <http://127.0.0.1:3000/> and the admin panel at <http://127.0.0.1:5173/admin/>. Check API and database readiness at <http://127.0.0.1:8080/api/v1/ready>. Sign in to the admin panel with the seeded email and password. Demo shops and products are optional; see the [demo guide](docs/engineering/demo.md).
 
-Lanjutkan ke [indeks dokumentasi](docs/README.md), [panduan demo web dan backup/restore](docs/engineering/demo.md), [build dan pemasangan APK Android](docs/users/android.md), atau [pengembangan lokal](docs/engineering/development.md).
+JDK 17 and the Android SDK are only needed to develop or build the Android app; see the [Android guide](docs/users/android.md). Press Ctrl+C in each application terminal to stop it, then run `pnpm db:down` to stop PostgreSQL without deleting its volume. For environment details and other development workflows, see the [local development guide](docs/engineering/development.md). To run all apps through Compose, see the [demo guide](docs/engineering/demo.md). Browse the [documentation index](docs/README.md) for other guides.
 
-## Konfigurasi
+## Configuration
 
-[`.env.example`](.env.example) adalah referensi dan **tidak dimuat otomatis** oleh perintah pnpm. Tetapkan variabel yang diperlukan di environment terminal.
+Copy the contents of [`.env.example`](.env.example) to a local `.env` file using an editor. `.env` is ignored by Git and loaded automatically by the API, migration, and seed scripts; other scripts use their defaults or Compose configuration.
 
-| Variabel                                   | Kegunaan dan nilai lokal                                                                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `RENTAID_COMPOSE_PROJECT`                  | Nama project demo; default `rentaid`, contoh mulai cepat `rentaid-demo`.                                                              |
-| `RENTAID_DB_PORT` / `RENTAID_HTTP_PORT`    | Port host PostgreSQL / gateway; default `5432` / `8081`.                                                                              |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Akun admin awal; wajib untuk seed, password minimal 12 karakter.                                                                      |
-| `SEED_DEMO_PASSWORD`                       | Password akun demo, minimal 12 karakter; wajib pada `demo:up` dan `demo:seed`.                                                        |
-| `APP_ENV` / `DATABASE_URL`                 | Lingkungan dan koneksi API host; contoh `local` dan URL PostgreSQL pada `.env.example`. Compose mengatur koneksi internalnya sendiri. |
-| `PAYMENT_SIMULATOR_ENABLED`                | Aktif dengan nilai `true`; contoh environment dan Compose lokal mengaktifkannya.                                                      |
-| `API_ORIGIN`                               | Alamat API untuk server Next.js; default pengembangan `http://127.0.0.1:8080`.                                                        |
+| Variable                                   | Purpose and local value                                                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `RENTAID_COMPOSE_PROJECT`                  | Demo project name; defaults to `rentaid`, with `rentaid-demo` as an example.                                                             |
+| `RENTAID_DB_PORT` / `RENTAID_HTTP_PORT`    | Host ports for PostgreSQL and the gateway; default to `5432` / `8081`.                                                                   |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Initial admin account; required for seeding, with a password of at least 12 characters.                                                  |
+| `SEED_DEMO_PASSWORD`                       | Demo account password, at least 12 characters; required by `demo:up` and `demo:seed`.                                                    |
+| `APP_ENV` / `DATABASE_URL`                 | API environment and host database connection; examples are `local` and the URL in `.env.example`. Compose configures its own connection. |
+| `PAYMENT_SIMULATOR_ENABLED`                | Enable with `true`; enabled in the example environment and local Compose configuration.                                                  |
+| `API_ORIGIN`                               | API address for the Next.js server; defaults to `http://127.0.0.1:8080` in development.                                                  |
 
-Konfigurasi sesi, Origin, media, serta koneksi Android tersedia di [panduan pengembangan](docs/engineering/development.md#konfigurasi).
+Session, Origin, media, and Android connection settings are described in the [development guide](docs/engineering/development.md#konfigurasi).
 
-## Keamanan
+## Security
 
-- Password di-hash dengan Argon2id; sesi disimpan di database dengan hash token SHA-256 dan masa berlaku default 14 hari.
-- Browser memakai cookie `HttpOnly`, `SameSite=Lax`, dan `Secure` di luar lokal; permintaan perubahan memerlukan CSRF dan pemeriksaan Origin.
-- Admin hanya memakai panel admin. Otorisasi penyewa, pemilik toko, dan admin dijalankan di API Go.
-- Android menyimpan token secara terenkripsi menggunakan Keystore. HTTP lokal hanya diizinkan pada build debug.
-- Unggahan JPEG, PNG, dan WebP diverifikasi berdasarkan isi, dibatasi 5 MB, dan disimpan dengan nama acak.
-- Seed menolak lingkungan production. Gunakan konfigurasi contoh lokal dan simpan password, token, serta backup secara privat.
+- Passwords are hashed with Argon2id. Sessions are stored in the database as SHA-256 token hashes and expire after 14 days by default.
+- Browsers use `HttpOnly`, `SameSite=Lax`, and `Secure` cookies outside local development; state-changing requests require CSRF protection and Origin checks.
+- Admins use the separate admin panel. The Go API enforces renter, shop-owner, and admin permissions.
+- Android stores tokens encrypted with Keystore. Local HTTP is allowed only in debug builds.
+- JPEG, PNG, and WebP uploads are validated by content, limited to 5 MB, and stored under randomized names.
+- Seeding is disabled in production. Use local example configuration and keep passwords, tokens, and backups private.
 
-Aturan lengkap tersedia di [panduan proyek](AGENTS.md#keamanan-sesi-dan-media).
+See the [project instructions](AGENTS.md#keamanan-sesi-dan-media) for the complete rules.
 
-## Kontribusi
+## Contributing
 
-Baca [panduan proyek](AGENTS.md), [keputusan teknis](docs/architecture/decisions.md), dan [panduan pengembangan](docs/engineering/development.md). Gunakan bahasa Inggris untuk kode, identifier, komentar kode, dan pesan commit; gunakan Bahasa Indonesia untuk UI dan panduan pengguna. Ikuti Conventional Commits dan branch per phase yang dibuat pengguna.
+Read the [project instructions](AGENTS.md), [technical decisions](docs/architecture/decisions.md), and [development guide](docs/engineering/development.md). Use English for code, identifiers, code comments, and commit messages. Follow Conventional Commits and create a branch for each phase as directed by the repository maintainer.
 
-| Perintah                                      | Tujuan                                                                      |
-| --------------------------------------------- | --------------------------------------------------------------------------- |
-| `pnpm check`                                  | Pemeriksaan merek, kontrak, Android, TypeScript, lint, format, dan test Go. |
-| `pnpm test:unit`                              | Unit test Go, web, dan Android.                                             |
-| `pnpm test:integration`                       | Integrasi PostgreSQL dan Android pada lingkungan test terpisah.             |
-| `pnpm test:e2e:web` / `pnpm test:e2e:android` | E2E web/admin/API atau Android; `pnpm test:e2e` menjalankan keduanya.       |
-| `pnpm api:build`                              | Build executable API ke `.artifacts/`.                                      |
-| `pnpm web:build` / `pnpm admin:build`         | Build aplikasi web dan admin.                                               |
-| `pnpm android:check` / `pnpm android:demo`    | Pemeriksaan/build Android atau APK demo USB dan emulator.                   |
+| Command                                       | Purpose                                                                           |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `pnpm check`                                  | Brand guard, contract, Android, TypeScript, lint, formatting, and Go test checks. |
+| `pnpm test:unit`                              | Go, web, and Android unit tests.                                                  |
+| `pnpm test:integration`                       | PostgreSQL and Android integration tests in an isolated test environment.         |
+| `pnpm test:e2e:web` / `pnpm test:e2e:android` | Web/admin/API or Android E2E; `pnpm test:e2e` runs both.                          |
+| `pnpm api:build`                              | Build the API executable in `.artifacts/`.                                        |
+| `pnpm web:build` / `pnpm admin:build`         | Build the marketplace and admin applications.                                     |
+| `pnpm android:check` / `pnpm android:demo`    | Check/build Android or create USB/emulator demo APKs.                             |
 
-Perubahan API harus memperbarui OpenAPI, klien terdampak, dan test kontrak. Ikuti [panduan pengujian](docs/engineering/testing.md) untuk database terpisah, E2E browser, fixture perangkat, dan test lintas aplikasi.
+API changes must update OpenAPI, affected clients, and contract tests. See the [testing guide](docs/engineering/testing.md) for separate databases, browser E2E, device fixtures, and cross-application tests.
 
-## Status dan arah pengembangan
+## Status and roadmap
 
-Phase 01–25 serta Gate A, B, dan akhir telah selesai menurut [catatan progres](docs/archive/migration-progress.md#progres). Panduan [demo Android](docs/users/android.md#hasil-verifikasi-6-november-2026) dan [stabilitas lintas aplikasi](docs/engineering/stability.md) memuat hasil verifikasi yang telah dicatat.
+Phases 01–25 and Gates A, B, and Final are marked complete in the [progress record](docs/archive/migration-progress.md#progres). The [Android demo guide](docs/users/android.md#hasil-verifikasi-6-november-2026) and [cross-application stability guide](docs/engineering/stability.md) contain the recorded verification results.
 
-[Rencana pengembangan](docs/archive/migration-plan.md) menyimpan urutan implementasi MVP. Pembayaran sungguhan, deposit, dompet, chat, ulasan, kurir, iOS, hosting publik, dan publikasi store masih di luar cakupan; pengembangan berikutnya memerlukan arahan tersendiri.
+The [development plan](docs/archive/migration-plan.md) records the MVP implementation sequence. Real payments, deposits, wallets, chat, reviews, delivery, iOS, public hosting, and store publication remain out of scope; further development requires separate direction.
 
-## Lisensi
+## License
 
-Repository ini belum menyediakan berkas lisensi. Lisensi penggunaan dan distribusi belum dinyatakan; hubungi pengelola untuk kejelasan izin.
+This repository does not currently include a license file. Usage and distribution rights have not been specified; contact the maintainer for clarification.
 
-## Apresiasi
+## Acknowledgments
 
-Rentaid dibangun menggunakan ekosistem Next.js, React, Go, PostgreSQL, Kotlin, Jetpack Compose, OpenAPI, dan perangkat pengujian sumber terbuka. Struktur README mengacu pada [15 Essential Sections Every README Needs](https://dev.to/georgekobaidze/15-essential-sections-every-readme-needs-give-your-project-what-it-deserves-fie) oleh Giorgi Kobaidze.
+Rentaid is built with the Next.js, React, Go, PostgreSQL, Kotlin, Jetpack Compose, and OpenAPI ecosystems, along with open-source testing tools. The README structure was inspired by [15 Essential Sections Every README Needs](https://dev.to/georgekobaidze/15-essential-sections-every-readme-needs-give-your-project-what-it-deserves-fie) by Giorgi Kobaidze.
 
-## Pengelola
+## Maintainer
 
-Repository dikelola melalui akun GitHub [@muhroyhan](https://github.com/muhroyhan): [muhroyhan/rentaid](https://github.com/muhroyhan/rentaid).
+This repository is maintained through GitHub account [@muhroyhan](https://github.com/muhroyhan): [muhroyhan/rentaid](https://github.com/muhroyhan/rentaid).
