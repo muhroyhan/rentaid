@@ -13,20 +13,6 @@ import (
 	"rentaid.local/api/internal/clock"
 )
 
-var ErrInvalidCredentials = errors.New("invalid credentials")
-var ErrUnauthorized = errors.New("unauthorized")
-var ErrForbidden = errors.New("forbidden")
-
-type User struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
-}
-type Session struct {
-	User      User      `json:"user"`
-	CSRFToken string    `json:"csrfToken,omitempty"`
-	ExpiresAt time.Time `json:"expiresAt"`
-}
 type Service struct {
 	Pool  *pgxpool.Pool
 	Clock clock.Clock
@@ -44,13 +30,12 @@ func (s *Service) SeedAdmin(ctx context.Context, email, password string) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.Pool.Exec(ctx, `INSERT INTO users(email,password_hash,role,status,created_at)
-        VALUES($1,$2,'admin','active',$3) ON CONFLICT(email) DO NOTHING`, email, hash, s.Clock.Now().UTC())
+	_, err = insertAdmin(ctx, s.Pool, email, hash, s.Clock.Now().UTC())
 	if err != nil {
 		return err
 	}
 	var role string
-	if err = s.Pool.QueryRow(ctx, "SELECT role FROM users WHERE email=$1", email).Scan(&role); err != nil {
+	if err = selectAccountRole(ctx, s.Pool, email, &role); err != nil {
 		return err
 	}
 	if role != "admin" {
@@ -71,8 +56,7 @@ func (s *Service) Login(ctx context.Context, email, password, client string) (st
 	defer func() { _ = tx.Rollback(ctx) }()
 	var user User
 	var hash, status string
-	err = tx.QueryRow(ctx, "SELECT id::text,email,password_hash,role,status FROM users WHERE email=$1 FOR UPDATE", email).
-		Scan(&user.ID, &user.Email, &hash, &user.Role, &status)
+	err = selectLoginUser(ctx, tx, email, &user, &hash, &status)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return "", Session{}, err
 	}
@@ -97,8 +81,7 @@ func (s *Service) Login(ctx context.Context, email, password, client string) (st
 	now := s.Clock.Now().UTC()
 	expiry := now.Add(s.TTL)
 	tokenHash := sha256.Sum256([]byte(token))
-	_, err = tx.Exec(ctx, `INSERT INTO sessions(user_id,token_hash,csrf_token,created_at,expires_at)
-        VALUES($1,$2,$3,$4,$5)`, user.ID, tokenHash[:], csrf, now, expiry)
+	_, err = insertSession(ctx, tx, user.ID, tokenHash[:], csrf, now, expiry)
 	if err != nil {
 		return "", Session{}, err
 	}
@@ -111,10 +94,7 @@ func (s *Service) Login(ctx context.Context, email, password, client string) (st
 func (s *Service) Authenticate(ctx context.Context, token string) (Session, error) {
 	hash := sha256.Sum256([]byte(token))
 	var session Session
-	err := s.Pool.QueryRow(ctx, `SELECT u.id::text,u.email,u.role,s.csrf_token,s.expires_at
-        FROM sessions s JOIN users u ON u.id=s.user_id
-        WHERE s.token_hash=$1 AND s.expires_at>$2 AND u.status='active'`, hash[:], s.Clock.Now().UTC()).
-		Scan(&session.User.ID, &session.User.Email, &session.User.Role, &session.CSRFToken, &session.ExpiresAt)
+	err := selectSession(ctx, s.Pool, hash[:], s.Clock.Now().UTC(), &session)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Session{}, ErrUnauthorized
 	}
@@ -123,12 +103,12 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Session, erro
 
 func (s *Service) Logout(ctx context.Context, token string) error {
 	hash := sha256.Sum256([]byte(token))
-	_, err := s.Pool.Exec(ctx, "DELETE FROM sessions WHERE token_hash=$1", hash[:])
+	_, err := deleteSession(ctx, s.Pool, hash[:])
 	return err
 }
 
 // RevokeAll must be called when a user is suspended or changes their password.
 func (s *Service) RevokeAll(ctx context.Context, userID string) error {
-	_, err := s.Pool.Exec(ctx, "DELETE FROM sessions WHERE user_id=$1", userID)
+	_, err := deleteUserSessions(ctx, s.Pool, userID)
 	return err
 }

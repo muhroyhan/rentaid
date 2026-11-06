@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getDashboard, getOwnStore, getSession } from "../../lib/session";
-import { VendorProducts } from "../../components/VendorProducts";
-import { VendorOrders } from "../../components/VendorOrders";
+import { getSession } from "../../features/account/data/session";
+import { VendorOrders } from "../../features/vendor/components/VendorOrders";
+import { VendorProducts } from "../../features/vendor/components/VendorProducts";
+import { getDashboard, getOwnStore } from "../../features/vendor/data/store";
 export default async function Page() {
   const session = await getSession();
   if (!session) redirect("/masuk");

@@ -1,5 +1,6 @@
 package id.rentaid.app
 
+import id.rentaid.app.connection.data.ApiConnectionRepository
 import id.rentaid.client.apis.DefaultApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse

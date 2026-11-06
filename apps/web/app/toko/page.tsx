@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getSession } from "../../lib/session";
-import { StoreForm } from "../../components/StoreForm";
+import { getSession } from "../../features/account/data/session";
+import { StoreForm } from "../../features/vendor/components/StoreForm";
 export default async function Page() {
   const session = await getSession();
   if (!session) redirect("/masuk");

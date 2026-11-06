@@ -23,22 +23,6 @@ import (
 
 const MaxBytes = 5 << 20
 
-var ErrNotFound = errors.New("not found")
-var ErrInvalid = errors.New("invalid content")
-var ErrTooLarge = errors.New("file too large")
-
-type Page struct {
-	Key       string  `json:"key"`
-	Title     string  `json:"title"`
-	Body      string  `json:"body"`
-	ImageID   *string `json:"imageId"`
-	Published bool    `json:"published"`
-}
-type Media struct {
-	ID          string `json:"id"`
-	ContentType string `json:"contentType"`
-	Size        int64  `json:"size"`
-}
 type Service struct {
 	Pool  *pgxpool.Pool
 	Clock clock.Clock
@@ -57,8 +41,7 @@ func (s *Service) Draft(ctx context.Context, key string) (Page, error) {
 	if !ValidKey(key) {
 		return p, ErrInvalid
 	}
-	err := s.Pool.QueryRow(ctx, `SELECT title,body,media_id::text,published_at IS NOT NULL FROM content_pages WHERE page_key=$1`, key).
-		Scan(&p.Title, &p.Body, &p.ImageID, &p.Published)
+	err := selectDraft(ctx, s.Pool, key, &p)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return p, nil
 	}
@@ -69,8 +52,7 @@ func (s *Service) Public(ctx context.Context, key string) (Page, error) {
 	if !ValidKey(key) {
 		return p, ErrInvalid
 	}
-	err := s.Pool.QueryRow(ctx, `SELECT published_title,published_body,published_media_id::text FROM content_pages WHERE page_key=$1 AND published_at IS NOT NULL`, key).
-		Scan(&p.Title, &p.Body, &p.ImageID)
+	err := selectPublicPage(ctx, s.Pool, key, &p)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return p, ErrNotFound
 	}
@@ -82,7 +64,7 @@ func (s *Service) Save(ctx context.Context, p Page) (Page, error) {
 	}
 	var exists bool
 	if p.ImageID != nil {
-		err := s.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM media WHERE id::text=$1)", *p.ImageID).Scan(&exists)
+		err := hasMedia(ctx, s.Pool, *p.ImageID, &exists)
 		if err != nil {
 			return Page{}, err
 		}
@@ -90,9 +72,7 @@ func (s *Service) Save(ctx context.Context, p Page) (Page, error) {
 			return Page{}, ErrInvalid
 		}
 	}
-	_, err := s.Pool.Exec(ctx, `INSERT INTO content_pages(page_key,title,body,media_id,updated_at) VALUES($1,$2,$3,$4,$5)
-        ON CONFLICT(page_key) DO UPDATE SET title=EXCLUDED.title,body=EXCLUDED.body,media_id=EXCLUDED.media_id,updated_at=EXCLUDED.updated_at`,
-		p.Key, p.Title, p.Body, p.ImageID, s.Clock.Now().UTC())
+	_, err := saveDraft(ctx, s.Pool, p.Key, p.Title, p.Body, p.ImageID, s.Clock.Now().UTC())
 	if err != nil {
 		return Page{}, err
 	}
@@ -102,9 +82,7 @@ func (s *Service) Publish(ctx context.Context, key string) (Page, error) {
 	if !ValidKey(key) {
 		return Page{}, ErrInvalid
 	}
-	result, err := s.Pool.Exec(ctx, `UPDATE content_pages SET published_title=title,published_body=body,
-        published_media_id=media_id,published_at=$2,updated_at=$2
-        WHERE page_key=$1 AND title ~ '[^[:space:]]' AND body ~ '[^[:space:]]'`, key, s.Clock.Now().UTC())
+	result, err := publishDraft(ctx, s.Pool, key, s.Clock.Now().UTC())
 	if err != nil {
 		return Page{}, err
 	}
@@ -164,8 +142,7 @@ func (s *Service) UploadOwned(ctx context.Context, r io.Reader, owner *string) (
 		return Media{}, err
 	}
 	m := Media{ContentType: mime, Size: int64(len(data))}
-	err = s.Pool.QueryRow(ctx, `INSERT INTO media(filename,content_type,size_bytes,created_at,owner_id) VALUES($1,$2,$3,$4,$5) RETURNING id::text`,
-		filename, mime, m.Size, s.Clock.Now().UTC(), owner).Scan(&m.ID)
+	err = insertMedia(ctx, s.Pool, filename, mime, m.Size, s.Clock.Now().UTC(), owner, &m.ID)
 	if err != nil {
 		_ = os.Remove(path)
 		return Media{}, err
@@ -182,16 +159,7 @@ func (s *Service) ReadOwnedMedia(ctx context.Context, id, owner string) ([]byte,
 
 func (s *Service) readMedia(ctx context.Context, id string, public bool, owner *string) ([]byte, string, error) {
 	var filename, mime string
-	query := `SELECT filename,content_type FROM media WHERE id::text=$1`
-	if public {
-		query += ` AND (EXISTS (SELECT 1 FROM content_pages WHERE published_at IS NOT NULL AND published_media_id=media.id) OR EXISTS (SELECT 1 FROM product_photos pp JOIN products p ON p.id=pp.product_id JOIN stores s ON s.id=p.store_id WHERE pp.media_id=media.id AND p.published AND NOT p.archived AND NOT p.hidden AND s.status='approved'))`
-	}
-	args := []any{id}
-	if owner != nil {
-		query += ` AND owner_id::text=$2`
-		args = append(args, *owner)
-	}
-	err := s.Pool.QueryRow(ctx, query, args...).Scan(&filename, &mime)
+	err := selectMedia(ctx, s.Pool, id, public, owner, &filename, &mime)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, "", ErrNotFound
 	}

@@ -4,7 +4,7 @@ globalThis.fetch = async () => {
   throw new Error("Network unavailable");
 };
 const { homeContent, products, productDetail, categories } =
-  await import("../../../apps/web/lib/catalog.ts");
+  await import("../../../apps/web/features/catalog/data/catalog.ts");
 assert.deepEqual(await homeContent(), { value: null, error: true });
 assert.deepEqual(await products({ page: 1, pageSize: 12 }), {
   value: null,

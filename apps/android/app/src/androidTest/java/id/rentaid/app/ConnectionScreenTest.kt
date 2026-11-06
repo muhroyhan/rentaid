@@ -4,6 +4,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import id.rentaid.app.connection.data.ApiConnectionRepository
+import id.rentaid.app.connection.data.ConnectionRepository
+import id.rentaid.app.connection.presentation.ConnectionScreen
+import id.rentaid.app.connection.presentation.ConnectionState
+import id.rentaid.app.navigation.RentaidApp
 import id.rentaid.client.apis.DefaultApi
 import org.junit.Assert.assertTrue
 import org.junit.Rule

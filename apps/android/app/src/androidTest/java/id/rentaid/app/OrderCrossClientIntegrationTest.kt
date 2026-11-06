@@ -2,6 +2,15 @@ package id.rentaid.app
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.gson.JsonParser
+import id.rentaid.app.account.data.ApiAccountRepository
+import id.rentaid.app.catalog.data.ApiCatalogRepository
+import id.rentaid.app.checkout.data.ApiCheckoutGateway
+import id.rentaid.app.checkout.data.CheckoutAttempt
+import id.rentaid.app.checkout.data.CheckoutResult
+import id.rentaid.app.checkout.data.PaymentAttempt
+import id.rentaid.app.checkout.data.PaymentResult
+import id.rentaid.app.core.security.SessionStore
+import id.rentaid.app.orders.data.ApiOrderRepository
 import id.rentaid.client.apis.DefaultApi
 import id.rentaid.client.infrastructure.ClientException
 import id.rentaid.client.models.CancelInput

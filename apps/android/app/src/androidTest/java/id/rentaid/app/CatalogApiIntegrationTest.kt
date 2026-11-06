@@ -1,5 +1,6 @@
 package id.rentaid.app
 
+import id.rentaid.app.catalog.data.ApiCatalogRepository
 import id.rentaid.client.apis.DefaultApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

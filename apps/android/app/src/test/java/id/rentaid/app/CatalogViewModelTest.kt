@@ -1,5 +1,7 @@
 package id.rentaid.app
 
+import id.rentaid.app.catalog.data.CatalogRepository
+import id.rentaid.app.catalog.presentation.CatalogViewModel
 import id.rentaid.client.apis.DefaultApi
 import id.rentaid.client.models.Category
 import id.rentaid.client.models.Page

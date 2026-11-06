@@ -13,20 +13,6 @@ import (
 const MaxDays = 30
 const maxSafeInteger int64 = 9007199254740991
 
-var ErrInvalid = errors.New("invalid rental parameters")
-var ErrUnavailable = errors.New("stock unavailable")
-var ErrNotFound = errors.New("product not found")
-
-type Quote struct {
-	ProductID  string `json:"productId"`
-	StartDate  string `json:"startDate"`
-	EndDate    string `json:"endDate"`
-	Days       int    `json:"days"`
-	Quantity   int32  `json:"quantity"`
-	DailyPrice int64  `json:"dailyPrice"`
-	Available  int32  `json:"available"`
-	Total      int64  `json:"total"`
-}
 type Service struct {
 	Pool  *pgxpool.Pool
 	Clock clock.Clock
@@ -65,7 +51,7 @@ func (s *Service) Calculate(ctx context.Context, id, start, end string, quantity
 	var price int64
 	var stock int32
 	var peak int64
-	err = s.Pool.QueryRow(ctx, `SELECT p.daily_price,p.stock,COALESCE((SELECT MAX(used) FROM (SELECT d.day, COALESCE(SUM(o.quantity),0) AS used FROM generate_series($2::date::timestamp,$3::date::timestamp,interval '1 day') AS d(day) LEFT JOIN orders o ON o.product_id=p.id AND o.start_date <= d.day::date AND o.end_date >= d.day::date AND (o.status IN ('confirmed','renting','completed') OR (o.status='pending_payment' AND o.hold_until > $4)) GROUP BY d.day) usage),0) FROM products p JOIN stores s ON s.id=p.store_id WHERE p.id=$1 AND p.published AND NOT p.archived AND NOT p.hidden AND s.status='approved'`, id, a, b, now).Scan(&price, &stock, &peak)
+	err = selectAvailability(ctx, s.Pool, id, a, b, now, &price, &stock, &peak)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Quote{}, ErrNotFound
 	}

@@ -1,5 +1,8 @@
 package id.rentaid.app
 
+import id.rentaid.app.connection.data.ConnectionRepository
+import id.rentaid.app.connection.presentation.ConnectionState
+import id.rentaid.app.connection.presentation.ConnectionViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

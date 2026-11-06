@@ -1,5 +1,8 @@
 package id.rentaid.app
 
+import id.rentaid.app.orders.data.OrderRepository
+import id.rentaid.app.orders.presentation.OrderDetailViewModel
+import id.rentaid.app.orders.presentation.OrderListViewModel
 import id.rentaid.client.infrastructure.ClientException
 import id.rentaid.client.models.CancelInput
 import id.rentaid.client.models.Order
