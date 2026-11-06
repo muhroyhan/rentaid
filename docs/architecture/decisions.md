@@ -2,6 +2,9 @@
 
 # Keputusan teknis
 
+- **Lapisan aplikasi:** folder fitur tetap menjadi batas organisasi. Go memisahkan model, service, dan query PostgreSQL dalam package domain; service memiliki transaksi dan meneruskan `database.Executor` yang sama ke repository. Web/admin memisahkan komponen, hook aplikasi, serta request API bertipe OpenAPI. Android mempertahankan MVVM dalam package fitur dengan presentation/data, navigasi terpisah, dan `AppContainer` sebagai penyusun dependency. Batas lapisan diperiksa melalui `scripts/architecture-check.mjs`; lihat [struktur aplikasi](layers.md).
+- **Lint Kotlin:** task source utama secara eksplisit memeriksa `app/src/main` karena klien OpenAPI berada di luar folder modul. Source test dan instrumentasi tetap diperiksa oleh task masing-masing; klien hasil generate diperiksa kesesuaiannya dengan generator.
+
 - **Migrasi SQL:** runner Go kecil berbasis pgx dan file SQL embedded dengan transaksi, advisory lock, serta checksum. Tabel metadata memakai primary key UUID sesuai aturan proyek; migrasi yang sudah dijalankan tidak boleh diubah. Ini menghindari tabel metadata integer bawaan goose.
 - **Kontrak:** OpenAPI 3.0.3 menjadi sumber kontrak. kin-openapi memvalidasi request dan response runtime; salinan embedded diperbarui melalui generator dan diperiksa kesamaannya.
 - **Klien TypeScript:** openapi-typescript menghasilkan tipe, openapi-fetch menyediakan klien; output diperiksa terhadap spesifikasi pada `pnpm check`.

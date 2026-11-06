@@ -7,6 +7,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
+import id.rentaid.app.account.data.ApiAccountRepository
+import id.rentaid.app.connection.data.ApiConnectionRepository
+import id.rentaid.app.core.security.KeystoreSessionStore
+import id.rentaid.app.navigation.RentaidApp
 import id.rentaid.client.apis.DefaultApi
 import org.junit.Rule
 import org.junit.Test

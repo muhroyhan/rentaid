@@ -3,11 +3,12 @@ package auth
 import (
 	"context"
 	"errors"
+
 	"github.com/jackc/pgx/v5"
 )
 
 func (s *Service) ListUsers(ctx context.Context, page, size int) ([]Profile, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT id::text,email,name,phone,status FROM users WHERE role='user' ORDER BY created_at DESC,id DESC LIMIT $1 OFFSET $2`, size, (page-1)*size)
+	rows, err := listUsers(ctx, s.Pool, size, (page-1)*size)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func (s *Service) SetUserStatus(ctx context.Context, id, status string) (Profile
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	var p Profile
-	err = tx.QueryRow(ctx, `UPDATE users SET status=$2 WHERE id=$1 AND role='user' RETURNING id::text,email,name,phone,status`, id, status).Scan(&p.ID, &p.Email, &p.Name, &p.Phone, &p.Status)
+	err = setUserStatus(ctx, tx, id, status, &p)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Profile{}, ErrForbidden
 	}
@@ -41,7 +42,7 @@ func (s *Service) SetUserStatus(ctx context.Context, id, status string) (Profile
 		return Profile{}, err
 	}
 	if status == "suspended" {
-		if _, err = tx.Exec(ctx, `DELETE FROM sessions WHERE user_id=$1`, id); err != nil {
+		if _, err = revokeUserSessions(ctx, tx, id); err != nil {
 			return Profile{}, err
 		}
 	}

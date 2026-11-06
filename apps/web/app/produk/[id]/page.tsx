@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { productDetail } from "../../../lib/catalog";
-import { QuoteForm } from "../../../components/QuoteForm";
+import { productDetail } from "../../../features/catalog/data/catalog";
+import { QuoteForm } from "../../../features/checkout/components/QuoteForm";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const currency = new Intl.NumberFormat("id-ID", {
   style: "currency",

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { homeContent, products } from "../lib/catalog";
-import { ProductCard } from "../components/ProductCard";
+import { ProductCard } from "../features/catalog/components/ProductCard";
+import { homeContent, products } from "../features/catalog/data/catalog";
 export default async function Home() {
   const [content, featured] = await Promise.all([
     homeContent(),

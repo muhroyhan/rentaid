@@ -10,5 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Marketplace web
 
+- Pertahankan route Next.js di `app/`; susun fitur di `features/` dengan `components/`, `application/`, dan `data/`. Komponen/hook tidak mengirim request HTTP langsung. Pembacaan cookie server hanya melalui transport `lib/authenticatedFetch.ts` dan modul data server yang memakainya.
+
 - Next.js melayani penyewa dan vendor serta meneruskan `/api` melalui origin yang sama. Teruskan cookie sesi pada SSR dan gunakan API Go sebagai sumber aturan bisnis.
 - Tampilkan UI dan pesan dalam Bahasa Indonesia; perbarui kontrak/klien bersama perubahan API dan uji alur relevan.

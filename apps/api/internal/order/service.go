@@ -10,19 +10,8 @@ import (
 	"rentaid.local/api/internal/clock"
 )
 
-var ErrNotFound = errors.New("order not found")
-var ErrInvalid = errors.New("invalid expected status")
-var ErrOutsideWindow = errors.New("outside handover window")
-
-type Conflict struct{ Status string }
-
 func (e *Conflict) Error() string { return "order status conflict" }
 
-type Cancellation struct {
-	ID           string `json:"id"`
-	Status       string `json:"status"`
-	RefundAmount int64  `json:"refundAmount"`
-}
 type Service struct {
 	Pool  *pgxpool.Pool
 	Clock clock.Clock
@@ -39,7 +28,7 @@ func (s *Service) Cancel(ctx context.Context, id, actor, role, expected string) 
 	defer func() { _ = tx.Rollback(ctx) }()
 	var state, renter, owner string
 	var hold time.Time
-	err = tx.QueryRow(ctx, `SELECT o.status,o.user_id::text,s.owner_id::text,o.hold_until FROM orders o JOIN products p ON p.id=o.product_id JOIN stores s ON s.id=p.store_id WHERE o.id=$1 FOR UPDATE OF o`, id).Scan(&state, &renter, &owner, &hold)
+	err = lockOrderForCancellation(ctx, tx, id, &state, &renter, &owner, &hold)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Cancellation{}, ErrNotFound
 	}
@@ -51,7 +40,7 @@ func (s *Service) Cancel(ctx context.Context, id, actor, role, expected string) 
 	}
 	refundAmount := int64(0)
 	if state == "cancelled" {
-		err = tx.QueryRow(ctx, `SELECT COALESCE((SELECT r.amount FROM refunds r JOIN payments p ON p.id=r.payment_id WHERE p.order_id=$1),0)`, id).Scan(&refundAmount)
+		err = selectRefundAmount(ctx, tx, id, &refundAmount)
 		if err != nil {
 			return Cancellation{}, err
 		}
@@ -59,10 +48,10 @@ func (s *Service) Cancel(ctx context.Context, id, actor, role, expected string) 
 	}
 	now := s.Clock.Now().UTC()
 	if state == "pending_payment" && !now.Before(hold) {
-		if _, err = tx.Exec(ctx, `UPDATE orders SET status='expired' WHERE id=$1 AND status='pending_payment'`, id); err != nil {
+		if _, err = expireOrder(ctx, tx, id); err != nil {
 			return Cancellation{}, err
 		}
-		if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,created_at) VALUES($1,'pending_payment','expired',$2)`, id, now); err != nil {
+		if _, err = insertExpirationHistory(ctx, tx, id, now); err != nil {
 			return Cancellation{}, err
 		}
 		if err = tx.Commit(ctx); err != nil {
@@ -75,22 +64,22 @@ func (s *Service) Cancel(ctx context.Context, id, actor, role, expected string) 
 	}
 	if state == "confirmed" {
 		var paymentID string
-		err = tx.QueryRow(ctx, `SELECT id::text,amount FROM payments WHERE order_id=$1 AND status='succeeded' FOR UPDATE`, id).Scan(&paymentID, &refundAmount)
+		err = selectSuccessfulPayment(ctx, tx, id, &paymentID, &refundAmount)
 		if err != nil {
 			return Cancellation{}, err
 		}
-		if _, err = tx.Exec(ctx, `INSERT INTO refunds(payment_id,amount,status,created_at) VALUES($1,$2,'succeeded',$3)`, paymentID, refundAmount, now); err != nil {
+		if _, err = insertRefund(ctx, tx, paymentID, refundAmount, now); err != nil {
 			return Cancellation{}, err
 		}
 	}
-	tag, err := tx.Exec(ctx, `UPDATE orders SET status='cancelled' WHERE id=$1 AND status=$2`, id, state)
+	tag, err := cancelOrder(ctx, tx, id, state)
 	if err != nil {
 		return Cancellation{}, err
 	}
 	if tag.RowsAffected() != 1 {
 		return Cancellation{}, errors.New("order changed while locked")
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,actor_id,created_at) VALUES($1,$2,'cancelled',$3,$4)`, id, state, actor, now); err != nil {
+	if _, err = insertCancellationHistory(ctx, tx, id, state, actor, now); err != nil {
 		return Cancellation{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -100,7 +89,7 @@ func (s *Service) Cancel(ctx context.Context, id, actor, role, expected string) 
 }
 func (s *Service) ExpireDue(ctx context.Context) (int64, error) {
 	now := s.Clock.Now().UTC()
-	tag, err := s.Pool.Exec(ctx, `WITH due AS (SELECT id FROM orders WHERE status='pending_payment' AND hold_until <= $1 ORDER BY hold_until,id LIMIT 200 FOR UPDATE SKIP LOCKED), changed AS (UPDATE orders o SET status='expired' FROM due WHERE o.id=due.id AND o.status='pending_payment' RETURNING o.id) INSERT INTO order_status_history(order_id,from_status,to_status,created_at) SELECT id,'pending_payment','expired',$1 FROM changed`, now)
+	tag, err := expireDueOrders(ctx, s.Pool, now)
 	if err != nil {
 		return 0, err
 	}
@@ -116,7 +105,7 @@ func (s *Service) Handover(ctx context.Context, id, actor string) (string, error
 	defer func() { _ = tx.Rollback(ctx) }()
 	var state string
 	var start, end time.Time
-	err = tx.QueryRow(ctx, `SELECT o.status,o.start_date,o.end_date FROM orders o JOIN products p ON p.id=o.product_id JOIN stores st ON st.id=p.store_id WHERE o.id=$1 AND st.owner_id=$2 FOR UPDATE OF o`, id, actor).Scan(&state, &start, &end)
+	err = lockOrderForHandover(ctx, tx, id, actor, &state, &start, &end)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", ErrNotFound
 	}
@@ -128,7 +117,7 @@ func (s *Service) Handover(ctx context.Context, id, actor string) (string, error
 	}
 	if state == "completed" {
 		var handed bool
-		err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM order_status_history WHERE order_id=$1 AND from_status='confirmed' AND to_status='renting')`, id).Scan(&handed)
+		err = hasHandoverHistory(ctx, tx, id, &handed)
 		if err != nil {
 			return "", err
 		}
@@ -148,14 +137,14 @@ func (s *Service) Handover(ctx context.Context, id, actor string) (string, error
 	if today < start.Format("2006-01-02") || today > end.Format("2006-01-02") {
 		return "", ErrOutsideWindow
 	}
-	tag, err := tx.Exec(ctx, `UPDATE orders SET status='renting' WHERE id=$1 AND status='confirmed'`, id)
+	tag, err := markRenting(ctx, tx, id)
 	if err != nil {
 		return "", err
 	}
 	if tag.RowsAffected() != 1 {
 		return "", errors.New("order changed while locked")
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,actor_id,created_at) VALUES($1,'confirmed','renting',$2,$3)`, id, actor, now); err != nil {
+	if _, err = insertHandoverHistory(ctx, tx, id, actor, now); err != nil {
 		return "", err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -173,7 +162,7 @@ func (s *Service) Return(ctx context.Context, id, actor string) (time.Time, erro
 	defer func() { _ = tx.Rollback(ctx) }()
 	var state string
 	var returned *time.Time
-	err = tx.QueryRow(ctx, `SELECT o.status,o.returned_at FROM orders o JOIN products p ON p.id=o.product_id JOIN stores st ON st.id=p.store_id WHERE o.id=$1 AND st.owner_id=$2 FOR UPDATE OF o`, id, actor).Scan(&state, &returned)
+	err = lockOrderForReturn(ctx, tx, id, actor, &state, &returned)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, ErrNotFound
 	}
@@ -188,14 +177,14 @@ func (s *Service) Return(ctx context.Context, id, actor string) (time.Time, erro
 	}
 	now := s.Clock.Now().UTC()
 	var saved time.Time
-	err = tx.QueryRow(ctx, `UPDATE orders SET status='completed',returned_at=$2 WHERE id=$1 AND status='renting' RETURNING returned_at`, id, now).Scan(&saved)
+	err = markCompleted(ctx, tx, id, now, &saved)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, errors.New("order changed while locked")
 	}
 	if err != nil {
 		return time.Time{}, err
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,actor_id,created_at) VALUES($1,'renting','completed',$2,$3)`, id, actor, saved); err != nil {
+	if _, err = insertReturnHistory(ctx, tx, id, actor, saved); err != nil {
 		return time.Time{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {

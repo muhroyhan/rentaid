@@ -1,6 +1,8 @@
 package id.rentaid.app
 
 import androidx.test.platform.app.InstrumentationRegistry
+import id.rentaid.app.account.data.ApiAccountRepository
+import id.rentaid.app.core.security.KeystoreSessionStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

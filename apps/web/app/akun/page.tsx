@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSession } from "../../lib/session";
-import { ProfileForm } from "../../components/ProfileForm";
+import { ProfileForm } from "../../features/account/components/ProfileForm";
+import { getSession } from "../../features/account/data/session";
 export default async function Page() {
   const session = await getSession();
   if (!session) redirect("/masuk");

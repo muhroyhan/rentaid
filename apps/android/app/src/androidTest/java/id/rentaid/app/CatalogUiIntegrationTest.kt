@@ -9,6 +9,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import id.rentaid.app.catalog.data.ApiCatalogRepository
+import id.rentaid.app.connection.data.ApiConnectionRepository
+import id.rentaid.app.navigation.RentaidApp
 import id.rentaid.client.apis.DefaultApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getSession } from "../lib/session";
-import { LogoutButton } from "../components/LogoutButton";
+import { LogoutButton } from "../features/account/components/LogoutButton";
+import { getSession } from "../features/account/data/session";
 import "./globals.css";
 
 export const metadata: Metadata = {

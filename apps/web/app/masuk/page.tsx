@@ -1,4 +1,4 @@
-import { AuthForm } from "../../components/AuthForm";
+import { AuthForm } from "../../features/account/components/AuthForm";
 export default function Page() {
   return (
     <main className="auth-layout section-width">

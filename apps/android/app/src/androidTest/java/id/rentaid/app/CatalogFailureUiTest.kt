@@ -5,6 +5,9 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import id.rentaid.app.catalog.data.CatalogRepository
+import id.rentaid.app.connection.data.ApiConnectionRepository
+import id.rentaid.app.navigation.RentaidApp
 import id.rentaid.client.apis.DefaultApi
 import id.rentaid.client.models.Category
 import id.rentaid.client.models.Page

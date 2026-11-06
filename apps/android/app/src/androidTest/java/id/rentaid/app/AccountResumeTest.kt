@@ -9,6 +9,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import id.rentaid.app.account.data.AccountRepository
+import id.rentaid.app.account.data.SessionExpired
+import id.rentaid.app.account.presentation.AccountScreen
+import id.rentaid.app.account.presentation.AccountViewModel
 import id.rentaid.client.models.Profile
 import org.junit.Rule
 import org.junit.Test

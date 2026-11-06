@@ -5,47 +5,14 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"rentaid.local/api/internal/clock"
-	"strings"
-	"time"
 )
 
-var ErrDisabled = errors.New("simulator disabled")
-var ErrInvalid = errors.New("invalid payment")
-var ErrKeyReuse = errors.New("key reuse")
-
-type Result struct {
-	Status int
-	Body   []byte
-}
-type Payment struct {
-	ID          string    `json:"id"`
-	OrderID     string    `json:"orderId"`
-	OrderCode   string    `json:"orderCode"`
-	ProductName string    `json:"productName"`
-	StoreName   string    `json:"storeName"`
-	Amount      int64     `json:"amount"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"createdAt"`
-}
-type VendorOrder struct {
-	ID           string     `json:"id"`
-	OrderCode    string     `json:"orderCode"`
-	ProductName  string     `json:"productName"`
-	StoreName    string     `json:"storeName"`
-	RefundAmount int64      `json:"refundAmount"`
-	ReturnedAt   *time.Time `json:"returnedAt,omitempty"`
-	RenterName   string     `json:"renterName"`
-	RenterPhone  string     `json:"renterPhone"`
-	StartDate    string     `json:"startDate"`
-	EndDate      string     `json:"endDate"`
-	Quantity     int32      `json:"quantity"`
-	Total        int64      `json:"total"`
-	Status       string     `json:"status"`
-	CreatedAt    time.Time  `json:"createdAt"`
-}
 type Service struct {
 	Pool    *pgxpool.Pool
 	Clock   clock.Clock
@@ -70,16 +37,16 @@ func (s *Service) Simulate(ctx context.Context, user, orderID, key, outcome stri
 		return Result{}, err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, user+":payment:"+key); err != nil {
+	if _, err = lockPaymentKey(ctx, tx, user+":payment:"+key); err != nil {
 		return Result{}, err
 	}
 	now := s.Clock.Now().UTC()
-	if _, err = tx.Exec(ctx, `DELETE FROM idempotency_keys WHERE user_id=$1 AND endpoint='payment' AND key=$2 AND expires_at <= $3`, user, key, now); err != nil {
+	if _, err = deleteExpiredPaymentKey(ctx, tx, user, key, now); err != nil {
 		return Result{}, err
 	}
 	var savedHash, body []byte
 	var status int
-	err = tx.QueryRow(ctx, `SELECT request_hash,response_status,response_body FROM idempotency_keys WHERE user_id=$1 AND endpoint='payment' AND key=$2`, user, key).Scan(&savedHash, &status, &body)
+	err = selectPaymentResult(ctx, tx, user, key, &savedHash, &status, &body)
 	if err == nil {
 		if string(savedHash) != string(hash[:]) {
 			return Result{}, ErrKeyReuse
@@ -90,7 +57,7 @@ func (s *Service) Simulate(ctx context.Context, user, orderID, key, outcome stri
 		return Result{}, err
 	}
 	persist := func(result Result) (Result, error) {
-		_, e := tx.Exec(ctx, `INSERT INTO idempotency_keys(user_id,endpoint,key,request_hash,response_status,response_body,expires_at) VALUES($1,'payment',$2,$3,$4,$5,$6)`, user, key, hash[:], result.Status, result.Body, now.Add(24*time.Hour))
+		_, e := savePaymentResult(ctx, tx, user, key, hash[:], result.Status, result.Body, now.Add(24*time.Hour))
 		if e != nil {
 			return Result{}, e
 		}
@@ -113,7 +80,7 @@ func (s *Service) Simulate(ctx context.Context, user, orderID, key, outcome stri
 	var state, orderCode, productName, storeName string
 	var hold time.Time
 	var amount int64
-	err = tx.QueryRow(ctx, `SELECT status,order_code,product_name,store_name,hold_until,total FROM orders WHERE id=$1 AND user_id=$2 FOR UPDATE`, orderID, user).Scan(&state, &orderCode, &productName, &storeName, &hold, &amount)
+	err = lockPaymentOrder(ctx, tx, orderID, user, &state, &orderCode, &productName, &storeName, &hold, &amount)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return reject(404, "not_found", "Pesanan tidak ditemukan.", "")
 	}
@@ -129,21 +96,21 @@ func (s *Service) Simulate(ctx context.Context, user, orderID, key, outcome stri
 	if late {
 		next = "expired"
 	}
-	tag, err := tx.Exec(ctx, `UPDATE orders SET status=$2 WHERE id=$1 AND status='pending_payment'`, orderID, next)
+	tag, err := setPaymentOrderStatus(ctx, tx, orderID, next)
 	if err != nil {
 		return Result{}, err
 	}
 	if tag.RowsAffected() != 1 {
 		return Result{}, errors.New("order status changed while locked")
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO order_status_history(order_id,from_status,to_status,actor_id,created_at) VALUES($1,'pending_payment',$2,$3,$4)`, orderID, next, user, now); err != nil {
+	if _, err = insertPaymentHistory(ctx, tx, orderID, next, user, now); err != nil {
 		return Result{}, err
 	}
 	if late {
 		return reject(409, "hold_expired", "Batas waktu pembayaran telah berakhir.", "expired")
 	}
 	p := Payment{OrderID: orderID, OrderCode: orderCode, ProductName: productName, StoreName: storeName, Amount: amount, Status: outcome, CreatedAt: now}
-	err = tx.QueryRow(ctx, `INSERT INTO payments(order_id,amount,status,created_at) VALUES($1,$2,$3,$4) RETURNING id::text`, orderID, amount, outcome, now).Scan(&p.ID)
+	err = insertPayment(ctx, tx, orderID, amount, outcome, now, &p.ID)
 	if err != nil {
 		return Result{}, err
 	}
@@ -159,10 +126,8 @@ func scanPayment(row pgx.Row) (Payment, error) {
 	return p, err
 }
 
-const paymentSelect = `SELECT p.id::text,p.order_id::text,o.order_code,o.product_name,o.store_name,p.amount,p.status,p.created_at FROM payments p JOIN orders o ON o.id=p.order_id `
-
 func (s *Service) List(ctx context.Context, page, size int) ([]Payment, error) {
-	rows, err := s.Pool.Query(ctx, paymentSelect+`ORDER BY p.created_at DESC,p.id DESC LIMIT $1 OFFSET $2`, size, int64(page-1)*int64(size))
+	rows, err := listPayments(ctx, s.Pool, size, int64(page-1)*int64(size))
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +143,7 @@ func (s *Service) List(ctx context.Context, page, size int) ([]Payment, error) {
 	return items, rows.Err()
 }
 func (s *Service) Get(ctx context.Context, id string) (Payment, error) {
-	return scanPayment(s.Pool.QueryRow(ctx, paymentSelect+`WHERE p.id=$1`, id))
+	return scanPayment(selectPayment(ctx, s.Pool, id))
 }
 func (s *Service) VendorOrders(ctx context.Context, user, status string, page, size int) ([]VendorOrder, error) {
 	return s.orders(ctx, user, status, page, size)
@@ -187,7 +152,7 @@ func (s *Service) AdminOrders(ctx context.Context, status string, page, size int
 	return s.orders(ctx, nil, status, page, size)
 }
 func (s *Service) orders(ctx context.Context, user any, status string, page, size int) ([]VendorOrder, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT o.id::text,o.order_code,o.product_name,o.store_name,COALESCE((SELECT r.amount FROM refunds r JOIN payments pay ON pay.id=r.payment_id WHERE pay.order_id=o.id),0),u.name,u.phone,o.start_date,o.end_date,o.quantity,o.total,o.status,o.created_at,o.returned_at FROM orders o JOIN products p ON p.id=o.product_id JOIN stores s ON s.id=p.store_id JOIN users u ON u.id=o.user_id WHERE ($1::uuid IS NULL OR s.owner_id=$1::uuid) AND ($2='' OR o.status=$2) ORDER BY o.created_at DESC,o.id DESC LIMIT $3 OFFSET $4`, user, status, size, int64(page-1)*int64(size))
+	rows, err := listOrders(ctx, s.Pool, user, status, size, int64(page-1)*int64(size))
 	if err != nil {
 		return nil, err
 	}

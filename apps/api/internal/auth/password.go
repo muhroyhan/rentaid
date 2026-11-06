@@ -23,8 +23,7 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	hash := argon2.IDKey([]byte(password), salt, iterations, memory, threads, keyLength)
-	return fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s", memory, iterations, threads,
-		base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash)), nil
+	return fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s", memory, iterations, threads, base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash)), nil
 }
 
 func VerifyPassword(encoded, password string) (bool, error) {

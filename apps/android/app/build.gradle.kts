@@ -53,6 +53,15 @@ ktlint {
     }
 }
 
+// Generated sources live outside this module; lint the handwritten main source tree explicitly.
+afterEvaluate {
+    tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.BaseKtLintCheckTask>().configureEach {
+        if (name.endsWith("MainSourceSet")) {
+            setSource(fileTree("src/main") { include("**/*.kt") })
+        }
+    }
+}
+
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.04.01"))
     implementation("androidx.activity:activity-compose:1.10.1")

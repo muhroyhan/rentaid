@@ -8,6 +8,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
+import id.rentaid.app.account.data.ApiAccountRepository
+import id.rentaid.app.catalog.data.ApiCatalogRepository
+import id.rentaid.app.checkout.data.ApiCheckoutGateway
+import id.rentaid.app.checkout.data.CheckoutAttempt
+import id.rentaid.app.checkout.data.CheckoutResult
+import id.rentaid.app.checkout.data.PaymentAttempt
+import id.rentaid.app.connection.data.ApiConnectionRepository
+import id.rentaid.app.core.security.KeystoreSessionStore
+import id.rentaid.app.navigation.RentaidApp
+import id.rentaid.app.orders.data.ApiOrderRepository
 import id.rentaid.client.apis.DefaultApi
 import id.rentaid.client.models.CheckoutInput
 import id.rentaid.client.models.PaymentInput

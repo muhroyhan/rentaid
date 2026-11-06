@@ -1,6 +1,9 @@
 package id.rentaid.app
 
 import androidx.test.platform.app.InstrumentationRegistry
+import id.rentaid.app.checkout.data.CheckoutAttempt
+import id.rentaid.app.checkout.data.EncryptedCheckoutAttemptStore
+import id.rentaid.app.core.security.KeystoreSessionStore
 import id.rentaid.client.models.CheckoutInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

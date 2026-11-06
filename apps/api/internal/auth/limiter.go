@@ -11,6 +11,7 @@ type attempt struct {
 	count   int
 	expires time.Time
 }
+
 type Limiter struct {
 	mu      sync.Mutex
 	entries map[string]attempt
