@@ -1,0 +1,4 @@
+services:
+  api:
+    environment:
+      ALLOWED_ORIGINS: http://localhost:${RENTAID_HTTP_PORT},http://127.0.0.1:${RENTAID_HTTP_PORT},http://localhost:18083

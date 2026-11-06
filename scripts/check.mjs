@@ -37,7 +37,7 @@ const commands = [
   ["pnpm", ["android:client-check"]],
   ["pnpm", ["android:check"]],
   ["pnpm", ["contracts:check"]],
-  ["pnpm", ["test:catalog-errors"]],
+  ["pnpm", ["test:unit"]],
   ["pnpm", ["--filter", "@rentaid/api-client", "typecheck"]],
   ["pnpm", ["--filter", "@rentaid/admin", "typecheck"]],
   ["pnpm", ["--filter", "@rentaid/web", "typecheck"]],
@@ -47,6 +47,7 @@ const commands = [
       "exec",
       "eslint",
       "scripts",
+      "tests",
       "apps/admin/src",
       "apps/admin/vite.config.ts",
       "apps/web/app",
@@ -65,6 +66,8 @@ const commands = [
       "pnpm-workspace.yaml",
       "eslint.config.mjs",
       "scripts/*.mjs",
+      "tests/**/*.mjs",
+      "tests/**/*.yaml",
       "packages/contracts/*.json",
       "packages/api-client/*.json",
       "packages/api-client/src/index.ts",
@@ -80,6 +83,7 @@ const commands = [
     ],
   ],
   ["go", ["-C", "apps/api", "vet", "./..."]],
+  ["go", ["-C", "apps/api", "vet", "-tags=integration", "./..."]],
   [
     "docker",
     [
@@ -95,7 +99,22 @@ const commands = [
       "./...",
     ],
   ],
-  ["pnpm", ["test"]],
+  [
+    "docker",
+    [
+      "run",
+      "--rm",
+      "--mount",
+      `type=bind,source=${resolve("apps/api")},target=/app`,
+      "--workdir",
+      "/app",
+      "golangci/golangci-lint:v2.15.0",
+      "golangci-lint",
+      "run",
+      "--build-tags=integration",
+      "./...",
+    ],
+  ],
 ];
 const formatted = spawnSync("gofmt", ["-l", "apps/api"], { encoding: "utf8" });
 if (formatted.status !== 0 || formatted.stdout.trim()) {

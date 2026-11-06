@@ -124,7 +124,7 @@ Masuk ke admin dengan email dan password seed yang Anda tentukan. Vendor contoh 
 
 Hentikan dengan `pnpm demo:down`; volume database dan media tetap tersimpan. Untuk memulai kembali, tetapkan lagi password seed yang sama dan jalankan `pnpm demo:up` dengan project yang sama.
 
-Lanjutkan ke [panduan demo web dan backup/restore](docs/demo.md), [build dan pemasangan APK Android](docs/android-demo.md), atau [pengembangan lokal](docs/development.md).
+Lanjutkan ke [indeks dokumentasi](docs/README.md), [panduan demo web dan backup/restore](docs/engineering/demo.md), [build dan pemasangan APK Android](docs/users/android.md), atau [pengembangan lokal](docs/engineering/development.md).
 
 ## Konfigurasi
 
@@ -140,7 +140,7 @@ Lanjutkan ke [panduan demo web dan backup/restore](docs/demo.md), [build dan pem
 | `PAYMENT_SIMULATOR_ENABLED`                | Aktif dengan nilai `true`; contoh environment dan Compose lokal mengaktifkannya.                                                      |
 | `API_ORIGIN`                               | Alamat API untuk server Next.js; default pengembangan `http://127.0.0.1:8080`.                                                        |
 
-Konfigurasi sesi, Origin, media, serta koneksi Android tersedia di [panduan pengembangan](docs/development.md#konfigurasi).
+Konfigurasi sesi, Origin, media, serta koneksi Android tersedia di [panduan pengembangan](docs/engineering/development.md#konfigurasi).
 
 ## Keamanan
 
@@ -155,23 +155,25 @@ Aturan lengkap tersedia di [panduan proyek](AGENTS.md#keamanan-sesi-dan-media).
 
 ## Kontribusi
 
-Baca [panduan proyek](AGENTS.md), [keputusan teknis](docs/decisions.md), dan [panduan pengembangan](docs/development.md). Gunakan bahasa Inggris untuk kode, identifier, komentar kode, dan pesan commit; gunakan Bahasa Indonesia untuk UI dan panduan pengguna. Ikuti Conventional Commits dan branch per phase yang dibuat pengguna.
+Baca [panduan proyek](AGENTS.md), [keputusan teknis](docs/architecture/decisions.md), dan [panduan pengembangan](docs/engineering/development.md). Gunakan bahasa Inggris untuk kode, identifier, komentar kode, dan pesan commit; gunakan Bahasa Indonesia untuk UI dan panduan pengguna. Ikuti Conventional Commits dan branch per phase yang dibuat pengguna.
 
-| Perintah                                   | Tujuan                                                                      |
-| ------------------------------------------ | --------------------------------------------------------------------------- |
-| `pnpm check`                               | Pemeriksaan merek, kontrak, Android, TypeScript, lint, format, dan test Go. |
-| `pnpm test`                                | Test Go; integrasi PostgreSQL memerlukan `TEST_DATABASE_URL`.               |
-| `pnpm api:build`                           | Build executable API ke `.artifacts/`.                                      |
-| `pnpm web:build` / `pnpm admin:build`      | Build aplikasi web dan admin.                                               |
-| `pnpm android:check` / `pnpm android:demo` | Pemeriksaan/build Android atau APK demo USB dan emulator.                   |
+| Perintah                                      | Tujuan                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------- |
+| `pnpm check`                                  | Pemeriksaan merek, kontrak, Android, TypeScript, lint, format, dan test Go. |
+| `pnpm test:unit`                              | Unit test Go, web, dan Android.                                             |
+| `pnpm test:integration`                       | Integrasi PostgreSQL dan Android pada lingkungan test terpisah.             |
+| `pnpm test:e2e:web` / `pnpm test:e2e:android` | E2E web/admin/API atau Android; `pnpm test:e2e` menjalankan keduanya.       |
+| `pnpm api:build`                              | Build executable API ke `.artifacts/`.                                      |
+| `pnpm web:build` / `pnpm admin:build`         | Build aplikasi web dan admin.                                               |
+| `pnpm android:check` / `pnpm android:demo`    | Pemeriksaan/build Android atau APK demo USB dan emulator.                   |
 
-Perubahan API harus memperbarui OpenAPI, klien terdampak, dan test kontrak. Ikuti [panduan pengujian](docs/testing.md) untuk database terpisah, E2E browser, fixture perangkat, dan test lintas aplikasi.
+Perubahan API harus memperbarui OpenAPI, klien terdampak, dan test kontrak. Ikuti [panduan pengujian](docs/engineering/testing.md) untuk database terpisah, E2E browser, fixture perangkat, dan test lintas aplikasi.
 
 ## Status dan arah pengembangan
 
-Phase 01–25 serta Gate A, B, dan akhir telah selesai menurut [catatan progres](AGENTS.md#progres). Panduan [demo Android](docs/android-demo.md#hasil-verifikasi-6-november-2026) dan [stabilitas lintas aplikasi](docs/phase24-testing.md) memuat hasil verifikasi yang telah dicatat.
+Phase 01–25 serta Gate A, B, dan akhir telah selesai menurut [catatan progres](docs/archive/migration-progress.md#progres). Panduan [demo Android](docs/users/android.md#hasil-verifikasi-6-november-2026) dan [stabilitas lintas aplikasi](docs/engineering/stability.md) memuat hasil verifikasi yang telah dicatat.
 
-[Rencana pengembangan](docs/plan.md) menyimpan urutan implementasi MVP. Pembayaran sungguhan, deposit, dompet, chat, ulasan, kurir, iOS, hosting publik, dan publikasi store masih di luar cakupan; pengembangan berikutnya memerlukan arahan tersendiri.
+[Rencana pengembangan](docs/archive/migration-plan.md) menyimpan urutan implementasi MVP. Pembayaran sungguhan, deposit, dompet, chat, ulasan, kurir, iOS, hosting publik, dan publikasi store masih di luar cakupan; pengembangan berikutnya memerlukan arahan tersendiri.
 
 ## Lisensi
 
