@@ -59,6 +59,20 @@ Emulator memakai `10.0.2.2` untuk menjangkau port 8081 pada komputer host. Kedua
 
 Jika aplikasi tidak dapat terhubung, periksa kesiapan layanan pada `http://127.0.0.1:8081/api/v1/ready`, serial ADB, pemetaan `reverse` untuk USB, dan pilihan APK yang sesuai. Jika hasil checkout atau pembayaran tidak diketahui karena koneksi terputus, buka **Lanjutkan pesanan** dan gunakan tombol pemeriksaan yang tersedia; aplikasi akan mempertahankan data upaya yang sama.
 
+## Akun, katalog, dan pemulihan
+
+Gunakan **Akun dan profil** untuk mendaftar, masuk, mengubah nama/telepon, atau keluar. Token sesi dienkripsi dengan Android Keystore dan dipulihkan setelah aplikasi dibuka kembali. Logout memerlukan koneksi agar server dapat mencabut sesi; sesi kedaluwarsa atau pengguna yang ditangguhkan meminta login ulang.
+
+Beranda menampilkan konten CMS yang diterbitkan, termasuk akses FAQ, tentang, syarat, dan privasi. **Lihat katalog** menyediakan pencarian, filter kategori, pagination, detail, serta foto produk. Kegagalan gambar ditampilkan sebagai pesan tanpa menghentikan aplikasi.
+
+Dari **Rencanakan sewa**, isi tanggal `YYYY-MM-DD` dan jumlah barang, lalu periksa penawaran server. Jika harga atau ketersediaan berubah, setujui kembali penawaran terbaru sebelum checkout. Pesanan menampilkan kode dan sisa hold berdasarkan waktu server.
+
+Jika hasil checkout tidak diketahui, pilih **Periksa dan coba lagi** dengan akun dan alamat server yang sama. Data upaya dan kunci idempotensi disimpan terenkripsi dan dipakai kembali, termasuk setelah proses aplikasi dihentikan. Untuk pembayaran terputus, buka **Lanjutkan pesanan**; aplikasi memeriksa status dan memakai kunci yang sama saat perlu mencoba ulang. Menjelang batas kunci 24 jam, aplikasi memblokir pengiriman ulang; bila hasil masih belum diketahui, minta admin memeriksa pesanan sebelum membuat checkout baru.
+
+**Pesanan saya** menampilkan riwayat, detail pembayaran, refund simulasi, dan perubahan status. Gunakan **Muat ulang** untuk melihat tindakan vendor/admin. Pembayaran gagal dan kedaluwarsa bersifat final; pembatalan sebelum serah terima memerlukan konfirmasi dan hasil akhirnya ditentukan server.
+
+Petunjuk fixture, instrumentasi, dan pemulihan lintas proses tersedia pada [panduan pengujian](testing.md#instrumentasi-android).
+
 ## Pengujian otomatis
 
 Setelah membuat kedua APK, tetapkan `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SERIAL` untuk perangkat USB, `ANDROID_EMULATOR_SERIAL` untuk emulator, dan `CHROME_PATH`, lalu jalankan `pnpm test:android-delivery`. Port 8081, 15435, dan 18124 harus tersedia. Perintah membuat stack test dan akun lokal terpisah, memasang masing-masing APK, menjalankan alur Android bersama vendor dan admin browser, lalu membersihkan container dan volume test. Runtime stack test menggunakan jaringan Docker internal; selama test, port 8081 host diteruskan ke gateway melalui `docker exec`. Dependensi untuk build pertama tetap perlu tersedia sebelumnya atau diunduh saat build.
