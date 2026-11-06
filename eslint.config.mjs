@@ -6,7 +6,7 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["scripts/**/*.mjs", "apps/web/*.mjs"],
+    files: ["scripts/**/*.mjs", "tests/**/*.mjs", "apps/web/*.mjs"],
     languageOptions: { globals: globals.node },
   },
   {
@@ -22,7 +22,6 @@ export default [
       "apps/api/**",
       "packages/**",
       "infra/**",
-      "tests/**",
     ],
   },
 ];

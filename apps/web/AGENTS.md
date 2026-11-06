@@ -7,3 +7,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Marketplace web
+
+- Next.js melayani penyewa dan vendor serta meneruskan `/api` melalui origin yang sama. Teruskan cookie sesi pada SSR dan gunakan API Go sebagai sumber aturan bisnis.
+- Tampilkan UI dan pesan dalam Bahasa Indonesia; perbarui kontrak/klien bersama perubahan API dan uji alur relevan.
